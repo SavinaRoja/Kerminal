@@ -1,0 +1,60 @@
+#!/usr/bin/env python3.4
+# encoding: utf-8
+
+"""
+Kerminal
+
+Kerminal is a terminal user interface (TUI) for Kerbal Space Program via the
+Telemachus Mod.
+
+Usage:
+  kerminal [(<host> <port>)] [--ui-log=LEVEL]
+  kerminal -h | --help | -v | --version
+
+General Options:
+  -h --help             Show this help message and exit
+  -v --version          Show Kerminal version and exit
+
+Options:
+  -l --ui-log=LEVEL     Enable logging and level for the user interface (one of:
+                        "CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"). The
+                        log data will be written to file as "kerminal.log" in
+                        working directory of execution. Use "DEBUG" with caution
+                        as it may result in large log files.
+"""
+
+from docopt import docopt
+from kerminal import KerminalApp, __version__
+import logging
+import sys
+
+log = logging.getLogger('kerminal')
+
+
+def get_level(level_string):
+    """
+    Returns an appropriate logging level integer from a string name
+    """
+    levels = {'debug': logging.DEBUG, 'info': logging.INFO,
+              'warning': logging.WARNING, 'error': logging.ERROR,
+              'critical': logging.CRITICAL}
+    try:
+        level = levels[level_string.lower()]
+    except KeyError:
+        sys.exit('{0} is not a recognized logging level'.format(level_string))
+    else:
+        return level
+
+if __name__ == '__main__':
+    args = docopt(__doc__, version=__version__)
+
+    if args['--ui-log']:
+        log.addHandler(logging.FileHandler('kerminal.log'))
+        log.setLevel(get_level(args['--ui-log']))
+
+    #TODO: If the user provids connection info at launch, skip the connection info query screen
+
+    app = KerminalApp()
+    app.run()
+    
+
