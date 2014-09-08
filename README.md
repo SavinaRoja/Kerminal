@@ -23,7 +23,7 @@ In order to use Kerminal, the following are **required**:
  * You must have a terminal program that works with `curses`; on Windows you
    will probably need to use cygwin.
  * Python 3.4 or higher
- * The following Python modules: `npyscreen`, `autobahn`
+ * The following Python modules: `npyscreen`, `autobahn`, `docopt`
 
 In order to use certain special features of Kerminal/Telemachus, refer to the
 following items:
