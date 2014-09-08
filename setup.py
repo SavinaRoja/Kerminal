@@ -6,7 +6,6 @@ try:
 except ImportError:
     from distutils.core import setup
 import os
-import sys
 
 
 def long_description():
@@ -23,8 +22,9 @@ setup(name='Kerminal',
       author_email='pablo.barton@gmail.com',
       url='https://github.com/SavinaRoja/Kerminal',
       #package_dir = {'': 'kerminal'},
-      packages = ['kerminal'],
+      packages=['kerminal'],
       scripts=['scripts/kerminal'],
       license='http://www.gnu.org/licenses/gpl-3.0.html',
       keywords='npyscreen, telemetry, websocket,',
+      install_requires=['autobahn', 'npyscreen', 'docopt']
 )

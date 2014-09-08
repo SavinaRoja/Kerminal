@@ -6,7 +6,7 @@
 
 from npyscreen import NPSAppManaged
 
-from .forms import ConnectQuery
+from . import forms
 
 
 class KerminalApp(NPSAppManaged):
@@ -14,4 +14,5 @@ class KerminalApp(NPSAppManaged):
     #keypress_timeout = 1
 
     def onStart(self):
-        self.addForm('MAIN', ConnectQuery)
+        self.addForm('MAIN', forms.ConnectQuery)
+        self.addForm('CONNECTION', forms.Connection)
