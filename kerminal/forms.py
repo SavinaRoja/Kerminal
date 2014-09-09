@@ -14,6 +14,7 @@ import logging
 log = logging.getLogger('kerminal.forms')
 
 from . import __version__
+from .widget_bases import LiveTitleText
 
 
 #The FormWithLiveWidgets class represents one of the first strategies for
@@ -38,23 +39,14 @@ class FormWithLiveWidgets(Form):
     live_widgets = []
 
     def add_live(self, *args, **kwargs):
-        """
-        A special wrapper around `Form.add` that intercepts the
-        keyword argument "feed" in order to register the
-        """
-        if 'feed' not in kwargs:
-            feed = lambda: 'NULL'
-        else:
-            feed = kwargs.pop('feed')
         live_widget = self.add(*args, **kwargs)
-        live_widget.feed = feed
         self.live_widgets.append(live_widget)
         return live_widget
 
     def while_waiting(self):
         #Updates all live widgets from their feed before updating
         for live_widget in self.live_widgets:
-            live_widget.value = live_widget.feed()
+            live_widget.feed()
         self.display()
 
 
@@ -64,12 +56,27 @@ class Connection(FormWithLiveWidgets):
     def create(self):
         #self.parentApp.stream.start()
         self.add(npyscreen.FixedText, value='You have successfully connected!')
-        self.time_w = self.add_live(npyscreen.TitleText,
+        self.time_w = self.add_live(LiveTitleText,
                                     name='Time',
                                     value='',
                                     editable=False,
                                     #feed=lambda:self.parentApp.data.get('v.altitude'))
-                                    feed=partial(strftime, "%Y-%m-%d %H:%M:%S"))
+                                    feed=partial(strftime, "%Y-%m-%d %H:%M:%S")
+                                    )
+        #Some testing of the LiveWidget, will remove next revision
+        #self.time_w2 = self.add_live(LiveTitleText,
+                                    #name='Time',
+                                    #value='',
+                                    #editable=False,
+                                    ##feed=partial(strftime, "%Y-%m-%d %H:%M:%S")
+                                    #)
+        #self.time_w2.feed = partial(strftime, "%Y-%m-%d %H:%M:%S")
+        #self.time_w3 = self.add_live(LiveTitleText,
+                                    #name='Time',
+                                    #value='Spam and Bacon!',
+                                    #editable=False,
+                                    ##feed=partial(strftime, "%Y-%m-%d %H:%M:%S")
+                                    #)
 
     def afterEditing(self):
         self.parentApp.setNextForm('MAIN')
