@@ -2,6 +2,7 @@
 
 
 #The information in this module was gleaned from DataLinkHandlers.cs
+#https://github.com/richardbunt/Telemachus/blob/master/Telemachus/src/DataLinkHandlers.cs
 
 #Actions are sent to server, result in one action per message
 mj_actions = ['mj.smartassoff',    # Smart ASS Off
@@ -23,10 +24,8 @@ mj_actions = ['mj.smartassoff',    # Smart ASS Off
               'mj.surface2',       # Surface [double heading, double pitch]
               ]
 
-
-vessel_actions = [
-                  #FlyByWire
-                  'v.setYaw',    # Yaw [float yaw]
+#FlyByWire Stuff
+vessel_actions = ['v.setYaw',    # Yaw [float yaw]
                   'v.setPitch',  # Pitch [float pitch]
                   'v.setRoll',   # Roll [float roll]
                   'v.setFbW',    # Set Fly by Wire On or Off [bool state]
@@ -73,7 +72,7 @@ mapview_actions = ['m.toggleMapView',  # Toggle Map View
                    'm.exitMapView',    # Exit Map View
                    ]
 
-#Plotables are things you can subscribe to
+#Plotables are things you can subscribe to; will be sent at each pulse
 target_plotables = ['tar.o.sma'            # Target Semimajor Axis
                     'tar.o.lan',           # Target Longitude of Ascending Node
                     'tar.o.maae',          # Target Mean Anomaly at Epoch
@@ -178,9 +177,9 @@ orbit_plotables = ["o.relativeVelocity",        # Relative Velocity
 
 sensor_plotables = ['s.sensor',       # Sensor Information [string sensor type]
                     's.sensor.temp',  # Temperature sensor information
-                    "s.sensor.pres",  # Pressure sensor information
-                    "s.sensor.grav",  # Gravity sensor information
-                    "s.sensor.acc",   # Acceleration sensor information
+                    's.sensor.pres',  # Pressure sensor information
+                    's.sensor.grav',  # Gravity sensor information
+                    's.sensor.acc',   # Acceleration sensor information
                     ]
 
 paused_plotables = ['p.paused',  # Paused
