@@ -5,7 +5,7 @@
 """
 
 from functools import partial
-from time import strftime
+from time import strftime, sleep
 
 from npyscreen import ButtonPress, Form
 import npyscreen
@@ -63,30 +63,57 @@ class Connection(FormWithLiveWidgets):
                                     #feed=lambda:self.parentApp.data.get('v.altitude'))
                                     feed=partial(strftime, "%Y-%m-%d %H:%M:%S")
                                     )
-        #Some testing of the LiveWidget, will remove next revision
-        #self.time_w2 = self.add_live(LiveTitleText,
-                                    #name='Time',
-                                    #value='',
-                                    #editable=False,
-                                    ##feed=partial(strftime, "%Y-%m-%d %H:%M:%S")
-                                    #)
-        #self.time_w2.feed = partial(strftime, "%Y-%m-%d %H:%M:%S")
-        #self.time_w3 = self.add_live(LiveTitleText,
-                                    #name='Time',
-                                    #value='Spam and Bacon!',
-                                    #editable=False,
-                                    ##feed=partial(strftime, "%Y-%m-%d %H:%M:%S")
-                                    #)
+        get_alt = partial(self.parentApp.stream.data.get, 'v.altitude')
+        self.alt = self.add_live(LiveTitleText,
+                                 name='Vessel Altitude',
+                                 value='',
+                                 editable=False,
+                                 feed=get_alt
+                                 )
 
     def afterEditing(self):
+        self.parentApp.stream.loop.stop()
+        self.parentApp.stream.make_connection.clear()
+        #self.parentApp.stream.connect_event.clear()
         self.parentApp.setNextForm('MAIN')
 
 
 class ConnectionButton(ButtonPress):
 
     def whenPressed(self):
-        self.parent.parentApp.switchForm('CONNECTION')
-        self.parent.special_button = True
+        #Sanity checking of fields
+        address = self.parent.address.value
+        port = self.parent.port.value
+        if not address or not port:
+            self.parent.info.value = 'You must enter an address AND a port!'
+            self.parent.display()
+            return
+        try:
+            port = int(port)
+        except ValueError:
+            self.parent.info.value = 'The port must be a number!'
+            self.parent.display()
+            return
+
+        #Instructions to the Communication Thread to make the connection
+        self.parent.parentApp.stream.address = address
+        self.parent.parentApp.stream.port = port
+        self.parent.parentApp.stream.make_connection.set()
+
+        self.parent.info.value = 'Making connection...'
+        self.parent.display()
+
+        #Wait for the Communication Thread to tell us it is done
+        self.parent.parentApp.stream.connect_event.wait()
+        self.parent.parentApp.stream.connect_event.clear()
+
+        if self.parent.parentApp.stream.connected:  # Success
+            self.parent.parentApp.switchForm('CONNECTION')
+            self.parent.special_button = True  # See ConnectQuery.afterEditing
+
+        else:  # Failed
+            self.parent.info.value = 'Could not connect'
+            self.parent.display()
 
 
 class ConnectQuery(Form):
@@ -98,13 +125,16 @@ class ConnectQuery(Form):
         self.add(npyscreen.FixedText,
                  value='Welcome to Kerminal {0}'.format(__version__),
                  editable=False)
-        self.host = self.add(npyscreen.TitleText,
-                             name='Host:',
-                             value='')
+        self.address = self.add(npyscreen.TitleText,
+                                name='Address:',
+                                value='')
         self.port = self.add(npyscreen.TitleText,
                              name='Port:',
                              value='')
         self.connect = self.add(ConnectionButton, name='Connect')
+        self.info = self.add(npyscreen.FixedText,
+                             value='',
+                             editable=False)
 
     def beforeEditing(self):
         pass
@@ -115,3 +145,4 @@ class ConnectQuery(Form):
         if not self.special_button:
             self.parentApp.setNextForm(None)
         self.special_button = False
+        self.info.value = ''

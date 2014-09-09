@@ -9,6 +9,8 @@ from autobahn.asyncio.websocket import WebSocketClientProtocol,\
                                        WebSocketClientFactory
 
 log = logging.getLogger('kerminal.communication')
+log.addHandler(logging.FileHandler('connection.log'))
+log.setLevel(logging.DEBUG)
 
 global LIVE_DATA
 LIVE_DATA = {}
@@ -27,13 +29,13 @@ class TelemachusProtocol(WebSocketClientProtocol):
         self.sendMessage(msg)
 
     def onConnect(self, response):
-        log.info('Connect to server at: {0}'.format(response.peer))
+        log.info('Connecting to server at: {0}'.format(response.peer))
 
     def onOpen(self):
         log.debug('WebSocket connect open.')
 
         #Below here are things that should be executed once at each connection
-        #self.send_json_message({'+': ['v.altitude'], 'rate': 2000})
+        self.send_json_message({'+': ['v.altitude']})
 
     def onMessage(self, payload, isBinary):
         #The Telemachus server should never send data as binary, but it can't
@@ -57,45 +59,63 @@ class TelemachusProtocol(WebSocketClientProtocol):
 
 class CommsThread(threading.Thread):
 
-    def __init__(self, address='localhost', port=9000, task_queue=None):
+    def __init__(self, address='localhost', port=8085, task_queue=None):
         #if task_queue is None:
         super(CommsThread, self).__init__()
         self.daemon = True
         self.address = address
         self.port = port
         self.loop = None
-
-        #Practical exercise will probably determine implementation for closes
-        self.stoprequest = threading.Event()  # Set to close the thread
+        self.make_connection = threading.Event()  # Internal use
+        self.connect_event = threading.Event()  # External tracking
+        self.connected = False
 
         global LIVE_DATA
         self.data = LIVE_DATA
 
     def connect(self):
         url = 'ws://{0}:{1}/datalink'.format(self.address, str(self.port))
+        log.info(url)
         self.factory = WebSocketClientFactory(url, debug=False)
         self.factory.protocol = TelemachusProtocol
         coro = self.loop.create_connection(self.factory,
                                            self.address,
                                            self.port)
-        self.loop.run_until_complete(coro)
+
+        ### MAKING the connection
+        #Whether success or fails, connect_event is set, later cleared by UI
+        #Success -> self.connected=True ; Failure -> self.connected = False
+        #If it fails, abort the connect method,
+        try:
+            self.loop.run_until_complete(coro)
+        #TODO: Add in some informative messages to send back to the UI
+        except:
+            self.connect_event.set()
+            self.connected = False
+            self.loop.stop()
+            self.loop.close()
+            self.make_connection.clear()
+            return
+        else:
+            self.connect_event.set()
+            self.connected = True
+
+        ### MAINTAINING the connection
+        #connect_event is cleared by UI
         try:
             self.loop.run_forever()
         finally:
             self.loop.close()
+            self.make_connection.clear()
+            #self.connect_event.clear()
 
     def init_loop(self):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
     def run(self):
-        self.init_loop()
-        self.connect()  # this blocks
-
-        #while not self.stoprequest.isSet():
-            #try:
-                #dirname = self.dir_q.get(True, 0.05)
-                #filenames = list(self._files_in_dir(dirname))
-                #self.result_q.put((self.name, dirname, filenames))
-            #except Queue.Empty:
-                #continue
+        #This thread will stay alive, even if connections are lost or dropped
+        while True:
+            self.make_connection.wait()
+            self.init_loop()
+            self.connect()  # this blocks
