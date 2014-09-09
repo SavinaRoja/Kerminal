@@ -91,11 +91,12 @@ class ConnectQuery(Form):
         self.add(npyscreen.FixedText,
                  value='Welcome to Kerminal {0}'.format(__version__),
                  editable=False)
-        self.address = self.add(npyscreen.TitleText,
-                                name='Address:',
-                                value='')
-        self.checkbox = self.add(npyscreen.CheckBox,
-                                 name='Add this to defaults?')
+        self.host = self.add(npyscreen.TitleText,
+                             name='Host:',
+                             value='')
+        self.port = self.add(npyscreen.TitleText,
+                             name='Port:',
+                             value='')
         self.connect = self.add(ConnectionButton, name='Connect')
 
     def beforeEditing(self):
