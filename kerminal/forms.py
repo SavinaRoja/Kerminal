@@ -63,13 +63,30 @@ class Connection(FormWithLiveWidgets):
                                     #feed=lambda:self.parentApp.data.get('v.altitude'))
                                     feed=partial(strftime, "%Y-%m-%d %H:%M:%S")
                                     )
-        get_alt = partial(self.parentApp.stream.data.get, 'v.altitude')
         self.alt = self.add_live(LiveTitleText,
-                                 name='Vessel Altitude',
+                                 name='V. Altitude',
                                  value='',
                                  editable=False,
-                                 feed=get_alt
+                                 feed=partial(self.parentApp.stream.data.get, 'v.altitude')
                                  )
+        self.mission_time = self.add_live(LiveTitleText,
+                                          name='V. Mission Time',
+                                          value='',
+                                          editable=False,
+                                          feed=partial(self.parentApp.stream.data.get, 'v.missionTime')
+                                          )
+        self.univ_time = self.add_live(LiveTitleText,
+                                       name='Universal Time',
+                                       value='',
+                                       editable=False,
+                                       feed=partial(self.parentApp.stream.data.get, 't.universalTime')
+                                       )
+        self.paused = self.add_live(LiveTitleText,
+                                    name='Game Paused',
+                                    value='',
+                                    editable=False,
+                                    feed=lambda: str(bool(partial(self.parentApp.stream.data.get, 'p.paused')))
+                                    )
 
     def afterEditing(self):
         self.parentApp.stream.loop.stop()
@@ -130,7 +147,7 @@ class ConnectQuery(Form):
                                 value='')
         self.port = self.add(npyscreen.TitleText,
                              name='Port:',
-                             value='')
+                             value='8085')
         self.connect = self.add(ConnectionButton, name='Connect')
         self.info = self.add(npyscreen.FixedText,
                              value='',

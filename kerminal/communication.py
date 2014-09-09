@@ -35,7 +35,8 @@ class TelemachusProtocol(WebSocketClientProtocol):
         log.debug('WebSocket connect open.')
 
         #Below here are things that should be executed once at each connection
-        self.send_json_message({'+': ['v.altitude']})
+        self.send_json_message({'+': ['v.altitude', 't.universalTime',
+                                      'v.missionTime', 'p.paused']})
 
     def onMessage(self, payload, isBinary):
         #The Telemachus server should never send data as binary, but it can't
@@ -45,9 +46,9 @@ class TelemachusProtocol(WebSocketClientProtocol):
         else:
             #Should always get a json message
             msg = json.loads(payload.decode('utf-8'))
+            log.debug('Message: {0}'.format(msg))
             global LIVE_DATA
             LIVE_DATA.update(msg)
-            log.debug('Message: {0}'.format(msg))
 
     def onError(self, *args):
         log.debug('Error: {0}'.format(args))
