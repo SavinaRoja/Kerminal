@@ -5,7 +5,7 @@
 """
 
 from functools import partial
-from time import strftime, sleep
+from time import strftime
 
 from npyscreen import ButtonPress, Form
 import npyscreen
@@ -15,6 +15,7 @@ log = logging.getLogger('kerminal.forms')
 
 from . import __version__
 from .widget_bases import LiveTitleText
+from .telemachus_api import orbit_plots_names
 
 
 #The FormWithLiveWidgets class represents one of the first strategies for
@@ -56,37 +57,50 @@ class Connection(FormWithLiveWidgets):
     def create(self):
         #self.parentApp.stream.start()
         self.add(npyscreen.FixedText, value='You have successfully connected!')
+        feedf = lambda k: partial(self.parentApp.stream.data.get, k)
         self.time_w = self.add_live(LiveTitleText,
                                     name='Time',
                                     value='',
                                     editable=False,
-                                    #feed=lambda:self.parentApp.data.get('v.altitude'))
                                     feed=partial(strftime, "%Y-%m-%d %H:%M:%S")
                                     )
         self.alt = self.add_live(LiveTitleText,
                                  name='V. Altitude',
                                  value='',
                                  editable=False,
-                                 feed=partial(self.parentApp.stream.data.get, 'v.altitude')
+                                 feed=feedf('v.altitude')
                                  )
         self.mission_time = self.add_live(LiveTitleText,
                                           name='V. Mission Time',
                                           value='',
                                           editable=False,
-                                          feed=partial(self.parentApp.stream.data.get, 'v.missionTime')
+                                          feed=feedf('v.missionTime')
                                           )
         self.univ_time = self.add_live(LiveTitleText,
                                        name='Universal Time',
                                        value='',
                                        editable=False,
-                                       feed=partial(self.parentApp.stream.data.get, 't.universalTime')
+                                       feed=feedf('t.universalTime')
                                        )
+        pausef = lambda f: 'True' if f() else 'False'
         self.paused = self.add_live(LiveTitleText,
                                     name='Game Paused',
                                     value='',
                                     editable=False,
-                                    feed=lambda: str(bool(partial(self.parentApp.stream.data.get, 'p.paused')))
+                                    feed=partial(pausef, feedf('p.paused'))
                                     )
+
+        #This illustrates that I am able to inject messages to be sent to the
+        #server based on UI actions
+        self.orbit = {}
+        subscribe_keys = list(orbit_plots_names.keys())
+        for key, nameval in orbit_plots_names.items():
+            self.orbit[key] = self.add_live(LiveTitleText,
+                                            name=nameval,
+                                            editable=False,
+                                            feed=feedf(key))
+
+        self.parentApp.stream.msg_queue.put({'+': subscribe_keys})
 
     def afterEditing(self):
         self.parentApp.stream.loop.stop()
