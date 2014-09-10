@@ -9,7 +9,6 @@ from npyscreen import NPSAppManaged
 from . import forms
 from .communication import CommsThread
 
-
 class KerminalApp(NPSAppManaged):
     keypress_timeout_default = 1  # this is as short as possible
     #keypress_timeout = 1
@@ -18,4 +17,4 @@ class KerminalApp(NPSAppManaged):
         self.stream = CommsThread()
         self.stream.start()
         self.addForm('MAIN', forms.ConnectQuery)
-        self.addForm('CONNECTION', forms.Connection)
+        self.addFormClass('CONNECTION', forms.Connection)
