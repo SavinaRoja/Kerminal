@@ -141,39 +141,58 @@ vessel_plotables = ['v.altitude',            # Altitude
                     'v.missionTime',         # Mission Time
                     'v.surfaceVelocity',     # Surface Velocity
                     'v.surfaceVelocityx',    # Surface Velocity x
-                    "v.surfaceVelocityy",    # Surface Velocity y
-                    "v.surfaceVelocityz",    # Surface Velocity z
-                    "v.angularVelocity",     # Angular Velocity
-                    "v.orbitalVelocity",     # Orbital Velocity
-                    "v.surfaceSpeed",        # Surface Speed
-                    "v.verticalSpeed",       # Vertical Speed
-                    "v.geeForce",            # G-Force
-                    "v.atmosphericDensity",  # Atmospheric Density
-                    "v.long",                # Longitude
+                    'v.surfaceVelocityy',    # Surface Velocity y
+                    'v.surfaceVelocityz',    # Surface Velocity z
+                    'v.angularVelocity',     # Angular Velocity
+                    'v.orbitalVelocity',     # Orbital Velocity
+                    'v.surfaceSpeed',        # Surface Speed
+                    'v.verticalSpeed',       # Vertical Speed
+                    'v.geeForce',            # G-Force
+                    'v.atmosphericDensity',  # Atmospheric Density
+                    'v.long',                # Longitude
                     'v.lat',                 # Latitude
-                    "v.dynamicPressure",     # Dynamic Pressure
-                    "v.name",                # Name
-                    "v.angleToPrograde",     # Angle to Prograde
+                    'v.dynamicPressure',     # Dynamic Pressure
+                    'v.name',                # Name
+                    'v.angleToPrograde',     # Angle to Prograde
                     ]
 
-orbit_plotables = ["o.relativeVelocity",        # Relative Velocity
-                   "o.PeA",                     # Periapsis
-                   "o.ApA",                     # Apoapsis
-                   "o.timeToAp",                # Time to Apoapsis
-                   "o.timeToPe",                # Time to Periapsis
+orbit_plotables = ['o.relativeVelocity',        # Relative Velocity
+                   'o.PeA',                     # Periapsis
+                   'o.ApA',                     # Apoapsis
+                   'o.timeToAp',                # Time to Apoapsis
+                   'o.timeToPe',                # Time to Periapsis
                    'o.inclination',             # Inclination
-                   "o.eccentricity",            # Eccentricity
-                   "o.epoch",                   # Epoch
-                   "o.period",                  # Orbital Period
-                   "o.argumentOfPeriapsis",     # Argument of Periapsis
-                   "o.timeToTransition1",       # Time to Transition 1
-                   "o.timeToTransition2",       # Time to Transition 2
-                   "o.sma",                     # Semimajor Axis
-                   "o.lan",                     # Longitude of Ascending Node
-                   "o.maae",                    # Mean Anomaly at Epoch
-                   "o.timeOfPeriapsisPassage",  # Time of Periapsis Passage
-                   "o.trueAnomaly",             # True Anomaly"
+                   'o.eccentricity',            # Eccentricity
+                   'o.epoch',                   # Epoch
+                   'o.period',                  # Orbital Period
+                   'o.argumentOfPeriapsis',     # Argument of Periapsis
+                   'o.timeToTransition1',       # Time to Transition 1
+                   'o.timeToTransition2',       # Time to Transition 2
+                   'o.sma',                     # Semimajor Axis
+                   'o.lan',                     # Longitude of Ascending Node
+                   'o.maae',                    # Mean Anomaly at Epoch
+                   'o.timeOfPeriapsisPassage',  # Time of Periapsis Passage
+                   'o.trueAnomaly',             # True Anomaly'
                    ]
+
+orbit_plots_names = {'o.relativeVelocity': 'Relative Velocity',
+                     'o.PeA': 'Periapsis',
+                     'o.ApA': 'Apoapsis',
+                     'o.timeToAp': 'Time to Apoapsis',
+                     'o.timeToPe': 'Time to Periapsis',
+                     'o.inclination': 'Inclination',
+                     'o.eccentricity': 'Eccentricity',
+                     'o.epoch': 'Epoch',
+                     'o.period': 'Orbital Period',
+                     'o.argumentOfPeriapsis': 'Argument of Periapsis',
+                     'o.timeToTransition1': 'Time to Transition 1',
+                     'o.timeToTransition2': 'Time to Transition 2',
+                     'o.sma': 'Semimajor Axis',
+                     'o.lan': 'Longitude of Ascending Node',
+                     'o.maae': 'Mean Anomaly at Epoch',
+                     'o.timeOfPeriapsisPassage': 'Time of Periapsis Passage',
+                     'o.trueAnomaly': 'True Anomaly',
+                     }
 
 sensor_plotables = ['s.sensor',       # Sensor Information [string sensor type]
                     's.sensor.temp',  # Temperature sensor information
@@ -187,6 +206,10 @@ paused_plotables = ['p.paused',  # Paused
 
 api_plotables = ['a.version',  # Telemachus Version
                  ]
+
+plotables = target_plotables + docking_plotables + body_plotables + \
+            navball_plotables + vessel_plotables + orbit_plotables + \
+            sensor_plotables + paused_plotables + api_plotables
 
 #Plain API Entries: how exactly do these work?
 resources = ['r.resource',         # Resource Information [string resource type]
