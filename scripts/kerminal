@@ -28,8 +28,7 @@ from kerminal import KerminalApp, __version__
 import logging
 import sys
 
-log = logging.getLogger('kerminal')
-
+log = logging.getLogger('kerminal.launcher')
 
 def get_level(level_string):
     """
@@ -49,12 +48,11 @@ if __name__ == '__main__':
     args = docopt(__doc__, version=__version__)
 
     if args['--ui-log']:
-        log.addHandler(logging.FileHandler('kerminal.log'))
-        log.setLevel(get_level(args['--ui-log']))
-
-    #TODO: If the user provids connection info at launch, skip the connection info query screen
+        base_log = logging.getLogger('kerminal')
+        base_log.addHandler(logging.FileHandler('kerminal.log'))
+        base_log.setLevel(get_level(args['--ui-log']))
 
     app = KerminalApp()
     app.run()
-    
+
 
