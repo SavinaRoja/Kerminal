@@ -63,7 +63,6 @@ flight_actions = ['f.stage',         # Stage
                   ]
 
 time_warp_actions = ['t.timeWarp',       # Time Warp [int rate]
-                     't.universalTime',  # Universal Time
                      ]
 
 #MapView here refers to the in-game orbital map, not the google maps hook
@@ -207,9 +206,13 @@ paused_plotables = ['p.paused',  # Paused
 api_plotables = ['a.version',  # Telemachus Version
                  ]
 
+time_warp_plotables = ['t.universalTime',  # Universal Time
+                       ]
+
 plotables = target_plotables + docking_plotables + body_plotables + \
             navball_plotables + vessel_plotables + orbit_plotables + \
-            sensor_plotables + paused_plotables + api_plotables
+            sensor_plotables + paused_plotables + api_plotables + \
+            time_warp_plotables
 
 #Plain API Entries: how exactly do these work?
 resources = ['r.resource',         # Resource Information [string resource type]

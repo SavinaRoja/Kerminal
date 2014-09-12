@@ -8,16 +8,20 @@ from functools import partial
 from time import strftime
 
 from npyscreen import ButtonPress, Form, FormMuttActiveTraditional
-from npyscreen.fmFormMuttActive import TextCommandBoxTraditional
+from npyscreen.fmFormMuttActive import TextCommandBoxTraditional,\
+                                       TextCommandBox
+from npyscreen.wgmultiline import MultiLine
 import npyscreen
 import logging
 import weakref
+import curses
+import json
 
 log = logging.getLogger('kerminal.forms')
 
 from . import __version__
 from .widget_bases import LiveTitleText, LiveTextfield
-from .telemachus_api import orbit_plots_names
+from .telemachus_api import orbit_plots_names, orbit_plotables
 
 
 #The FormWithLiveWidgets class represents one of the first strategies for
@@ -56,11 +60,6 @@ class FormWithLiveWidgets(Form):
 #I plan on overhauling the system for commands; I didn't like the regex
 #implementation. I might see if I can just use docopt for the job
 #This is a stand in for now
-#Ideally, I would like to be able to press something like Esc to toggle between
-#the widget interface and the commandline. Or I suppose maybe Ctrl+arrow
-#could be used to navigate through command history
-#I might have to tweak a bunch of the internals throughout to get things exactly
-#as I want them, maybe something interesting will arise for npyscreen
 class KerminalCommands(object):
     def __init__(self, parent=None):
         try:
@@ -81,15 +80,167 @@ class KerminalCommands(object):
         pass
 
     def process_command_complete(self, command_line, control_widget_proxy):
-        command = command_line.split()[0][1:]
+        command = command_line.split()[0]
         for action in self._action_list:
             if action['command'] == command:
-                action['function'](command_line, control_widget_proxy, live=False)
+                action['function'](command_line,
+                                   control_widget_proxy,
+                                   live=False)
 
     def create(self):
         self.add_action('quit', self.quit, False)
         self.add_action('connect', self.connect, False)
         self.add_action('disconnect', self.disconnect, False)
+        self.add_action('send', self.send, False)
+        self.add_action('sub', self.sub, False)
+        self.add_action('unsub', self.unsub, False)
+        self.add_action('help', self.help, False)
+        self.add_action('demo', self.demo, False)
+        self.add_action('haiku', self.haiku, False)
+
+    def help(self, command_line, widget_proxy, live):
+        """
+        Prints a help message showing what commands are available and their
+        basic usage profiles.
+        """
+        help_msg = '''\
+
+  Kerminal v {version}
+
+  These commands are available at the Kerminal Command Line. Type "help" to see
+  this list, and type "help name" to find out more about the use of the command
+  "name".
+
+  Each command's usage definition will be given, followed by a brief description
+  of its function. Items in angle-brackets like this "<item>" are called
+  arguments and are meant to be replaced by appropriate text.
+
+  connect <host-address>:<port>
+   -- Connect to a Telemachus server if not already connected.
+  demo
+   -- Show a demonstration of data streaming if connected.
+  disconnect
+   -- Disconnect from the Telemachus server if currently connected.
+  help
+   -- Print this help message.
+  send <json_string>
+   -- Send an arbitrary JSON string to the Telemachus server (if connected).
+  sub <api_variable> ...
+   -- Subscribe to one or more Telemachus data variables (if connected).
+  unsub <api_variable> ...
+   -- Unsubscribe from one or more Telemachus data variables (if connected).
+  quit
+   -- Shut down Kerminal.
+'''.format(version=__version__)
+
+        def multiline_feed(widget_instance):
+            widget_instance.values = help_msg.split('\n')
+        self.parent.wMain.feed = partial(multiline_feed, self.parent.wMain)
+
+    def demo(self, command_line, widget_proxy, live):
+        #Subscribe to the necessary data
+        self.put_dict_to_stream({'+': orbit_plotables})
+
+        #Create a function that will update the multline widget's .values
+        def multiline_feed(widget_instance):
+            getter = lambda k: self.parent.parentApp.stream.data.get(k, 0)
+            form = '''
+ Relative Velocity  : {o_relativeVelocity:0.1f}   (m/s)
+ Periapsis          : {o_PeA:0.1f} (m)
+ Apoapsis           : {o_PeA:0.1f} (m)
+ Time to Apoapsis   : {o_timeToAp:0.1f} (s)
+ Time to Periapsis  : {o_timeToPe:0.1f} (s)
+ Orbit Inclination  : {o_inclination:0.1f}
+ Eccentricity       : {o_eccentricity:0.1f}
+ Epoch              : {o_epoch:0.1f} (s)
+ Orbital Period     : {o_period:0.1f} (s)
+ Argument of Peri.  : {o_argumentOfPeriapsis:0.1f}
+ Time to Trans1     : {o_timeToTransition1:0.1f} (s)
+ Time to Trans2     : {o_timeToTransition2:0.1f} (s)
+ Semimajor Axis     : {o_sma:0.1f}
+ Long. of Asc. Node : {o_lan:0.1f}
+ Mean Anomaly       : {o_maae:0.1f}
+ Time of Peri. Pass : {o_timeOfPeriapsisPassage:0.1f} (s)
+ True Anomaly       : {o_trueAnomaly:0.1f}
+'''
+            data = {key.replace('.', '_'): getter(key) for key in orbit_plotables}
+            log.info(data)
+
+            widget_instance.values = form.format(**data).split('\n')
+
+        self.parent.wMain.feed = partial(multiline_feed, self.parent.wMain)
+
+    def send(self, command_line, widget_proxy, live):
+        """
+        Sends a json formatted string to the telemachus server if connected.
+        Being able to send arbitrary API strings during live execution is very
+        handy for development.
+
+        Usage:
+            send <json_string>
+
+        Examples:
+            send {"+": ["v.altitude", "o.period"]}
+            send {"rate": 2000, "+": ["t.universalTime"]}
+            send {"run": ["f.stage"]}
+        """
+        if not self.parent.parentApp.stream.connected:
+            return
+        if len(command_line.split()) < 2:
+            return
+        msg = command_line.split(' ', 1)[1]
+        log.debug(msg)
+        try:
+            msg_dict = json.loads(msg)
+        except Exception as e:
+            log.exception(e)
+            log.debug('parse failed')
+            return
+        else:
+            self.put_dict_to_stream(msg_dict)
+
+    def put_dict_to_stream(self, msg_dict):
+        self.parent.parentApp.stream.msg_queue.put(msg_dict)
+
+    def sub(self, command_line, widget_proxy, live):
+        """
+        A convenience command for subscribing to any number of api variables.
+        This will send the appropiate api string {"+": [<api_var> ...]} to the
+        server.
+
+        Usage:
+            sub <api_var> ...
+
+        Example:
+            sub v.altitude o.period
+        """
+        if not self.parent.parentApp.stream.connected:
+            return
+        if len(command_line.split()) < 2:
+            return
+        api_vars = command_line.split()[1:]
+        msg_dict = {'+': api_vars}
+        self.put_dict_to_stream(msg_dict)
+
+    def unsub(self, command_line, widget_proxy, live):
+        """
+        A convenience command for unsubscribing from any number of api
+        variables. This will send the appropiate api string
+        {"-": [<api_var> ...]} to the server.
+
+        Usage:
+            unsub <api_var> ...
+
+        Example:
+            unsub v.altitude o.period
+        """
+        if not self.parent.parentApp.stream.connected:
+            return
+        if len(command_line.split()) < 2:
+            return
+        api_vars = command_line.split()[1:]
+        msg_dict = {'-': api_vars}
+        self.put_dict_to_stream(msg_dict)
 
     def quit(self, command_line, widget_proxy, live):
         self.parent.parentApp.setNextForm(None)
@@ -98,19 +249,22 @@ class KerminalCommands(object):
     #Setting the wCommand.value seems to have no effect, I need to look into
     #this later. I might actually prefer a separate info region anyway...
     def connect(self, command_line, widget_proxy, live):
-        addr = command_line.split()[1]
+        if self.parent.parentApp.stream.connected:
+            return
         try:
+            addr = command_line.split()[1]
             address, port = addr.split(':')
+        except IndexError:
+            self.parent.wCommand.value = 'Usage: connect <address>:<port>'
+            return
         except ValueError:
-            self.parent.wCommand.value = 'Usage: /connect <address>:<port>'
-            self.parent.display()
+            self.parent.wCommand.value = 'Usage: connect <address>:<port>'
             return
 
         try:
             port = int(port)
         except ValueError:
             self.parent.wCommand.value = 'Port must be a number'
-            self.parent.display()
             return
 
         #Instructions to the Communication Thread to make the connection
@@ -119,7 +273,6 @@ class KerminalCommands(object):
         self.parent.parentApp.stream.make_connection.set()
 
         self.parent.wCommand.value = 'Making connection...'
-        self.parent.display()
 
         #Wait for the Communication Thread to tell us it is done
         self.parent.parentApp.stream.connect_event.wait()
@@ -127,7 +280,6 @@ class KerminalCommands(object):
 
         if not self.parent.parentApp.stream.connected:  # Failed
             self.parent.wCommand.value = 'Could not connect'
-            self.parent.display()
         else:
             self.parent.wCommand.value = 'Connected!'
 
@@ -135,6 +287,88 @@ class KerminalCommands(object):
         if self.parent.parentApp.stream.loop is not None:
             self.parent.parentApp.stream.loop.stop()
         self.parent.parentApp.stream.make_connection.clear()
+
+    def haiku(self, command_line, widget_proxy, live):
+        haiku = '''
+ A field of cotton--
+ as if the moon
+ had flowered.
+ - Matsuo Bashō (松尾 芭蕉)'''
+        def multiline_feed(widget_instance):
+            widget_instance.values = haiku.split('\n')
+        self.parent.wMain.feed = partial(multiline_feed, self.parent.wMain)
+
+
+class TextCommandBoxToggled(TextCommandBox):
+
+    def __init__(self,
+                 screen,
+                 history=True,
+                 history_max=100,
+                 set_up_history_keys=True,
+                 *args, **kwargs):
+        super(TextCommandBoxToggled,
+              self).__init__(screen,
+                             history=history,
+                             history_max=history_max,
+                             set_up_history_keys=set_up_history_keys,
+                             *args, **kwargs
+                             )
+        self.linked_widget = None
+        self.always_pass_to_linked_widget = []
+        self.command_active = False
+        self.value = 'Press TAB to enter commands'
+        self.toggle_handler = curses.ascii.TAB
+        self.handlers.update({curses.KEY_HOME: self.h_cursor_beginning,
+                              curses.KEY_END: self.h_cursor_end,})
+
+    def h_cursor_beginning(self, *args, **kwargs):
+        self.cursor_position = 0
+
+    def h_cursor_end(self, *args, **kwargs):
+        self.cursor_position= len(self.value)
+        if self.cursor_position < 0:
+            self.cursor_position = 0
+
+    def toggle_command_active(self, *args, **kwargs):
+        self.command_active = not self.command_active
+        if self.command_active:
+            self.value = ''
+        else:
+            self.value = 'Press TAB to enter commands'
+            self.h_cursor_end()
+        self.update()
+
+    def handle_input(self, inputch):
+        if inputch == self.toggle_handler:
+            self.toggle_command_active()
+            return
+        try:
+            inputchstr = chr(inputch)
+        except:
+            inputchstr = False
+
+        try:
+            input_unctrl = curses.ascii.unctrl(inputch)
+        except TypeError:
+            input_unctrl = False
+
+        if not self.linked_widget:
+            return super(TextCommandBoxTraditional, self).handle_input(inputch)
+
+        if (inputch in self.always_pass_to_linked_widget) or \
+            (inputchstr in self.always_pass_to_linked_widget) or \
+            (input_unctrl in self.always_pass_to_linked_widget):
+            rtn = self.linked_widget.handle_input(inputch)
+            self.linked_widget.update()
+            return rtn
+
+        if self.command_active:
+            return super(TextCommandBoxToggled, self).handle_input(inputch)
+
+        rtn = self.linked_widget.handle_input(inputch)
+        self.linked_widget.update()
+        return rtn
 
 
 class SlashOnlyTextCommandBoxTraditional(TextCommandBoxTraditional):
@@ -146,9 +380,38 @@ class KerminalForm(FormMuttActiveTraditional, FormWithLiveWidgets):
     STATUS_WIDGET_X_OFFSET = 1
     STATUS_WIDGET_CLASS = LiveTextfield
     ACTION_CONTROLLER = KerminalCommands
-    COMMAND_WIDGET_CLASS = SlashOnlyTextCommandBoxTraditional
+    #COMMAND_WIDGET_CLASS = SlashOnlyTextCommandBoxTraditional
+    COMMAND_WIDGET_CLASS = TextCommandBoxToggled
+    #MAIN_WIDGET_CLASS   = MultiLine
 
 
+    #I may actually just make a new class in the future to partially
+    #re-implement the FormMuttActive.
+    def __init__(self, *args, **kwargs):
+        super(KerminalForm, self).__init__(*args, **kwargs)
+        #This being set to True was causing trouble
+        self.wMain.interested_in_mouse_even_when_not_editable = False
+        #Allow the recall of previous widget
+        self.previous_widget = self.wMain
+        log.info(self.previous_widget)
+        self.wMain.feed = lambda: ''
+
+    def go_back(self, *args, **kwargs):
+        log.info('going back')
+        self.wMain = self.previous_widget
+
+    #It looks like interacting with MultiLine widgets is going to necessitate
+    #a variation in technique
+    def while_waiting(self):
+        #Updates all live widgets from their feed before updating
+        for live_widget in self.live_widgets:
+            live_widget.feed()
+        #Here's the stuff for live updating the multiline widget
+        self.wMain.feed()
+        self.display()
+
+
+#Here be the older demo interface stuff; pre-Mutt-like
 class Connection(FormWithLiveWidgets):
     OK_BUTTON_TEXT = 'DROP CONNECTION'
 

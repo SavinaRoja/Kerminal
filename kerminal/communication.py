@@ -134,6 +134,7 @@ class CommsThread(threading.Thread):
             self.loop.close()
             self.loop = None
             self.make_connection.clear()  # Clear so we can wait for it again
+            self.connected = False
 
     def init_loop(self):
         self.loop = asyncio.new_event_loop()
