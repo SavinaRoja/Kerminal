@@ -7,14 +7,16 @@
 from functools import partial
 from time import strftime
 
-from npyscreen import ButtonPress, Form
+from npyscreen import ButtonPress, Form, FormMuttActiveTraditional
+from npyscreen.fmFormMuttActive import TextCommandBoxTraditional
 import npyscreen
 import logging
+import weakref
 
 log = logging.getLogger('kerminal.forms')
 
 from . import __version__
-from .widget_bases import LiveTitleText
+from .widget_bases import LiveTitleText, LiveTextfield
 from .telemachus_api import orbit_plots_names
 
 
@@ -49,6 +51,102 @@ class FormWithLiveWidgets(Form):
         for live_widget in self.live_widgets:
             live_widget.feed()
         self.display()
+
+
+#I plan on overhauling the system for commands; I didn't like the regex
+#implementation. I might see if I can just use docopt for the job
+#This is a stand in for now
+#Ideally, I would like to be able to press something like Esc to toggle between
+#the widget interface and the commandline. Or I suppose maybe Ctrl+arrow
+#could be used to navigate through command history
+#I might have to tweak a bunch of the internals throughout to get things exactly
+#as I want them, maybe something interesting will arise for npyscreen
+class KerminalCommands(object):
+    def __init__(self, parent=None):
+        try:
+            self.parent = weakref.proxy(parent)
+        except:
+            self.parent = parent
+        self._action_list = []
+        self.create()
+
+    def add_action(self, command, function, live):
+        self._action_list.append({'command': command,
+                                  'function': function,
+                                  'live': live
+                                  })
+
+    def process_command_live(self, command_line, control_widget_proxy):
+        #No live command processing
+        pass
+
+    def process_command_complete(self, command_line, control_widget_proxy):
+        command = command_line.split()[0][1:]
+        for action in self._action_list:
+            if action['command'] == command:
+                action['function'](command_line, control_widget_proxy, live=False)
+
+    def create(self):
+        self.add_action('quit', self.quit, False)
+        self.add_action('connect', self.connect, False)
+        self.add_action('disconnect', self.disconnect, False)
+
+    def quit(self, command_line, widget_proxy, live):
+        self.parent.parentApp.setNextForm(None)
+        self.parent.parentApp.switchFormNow()
+
+    #Setting the wCommand.value seems to have no effect, I need to look into
+    #this later. I might actually prefer a separate info region anyway...
+    def connect(self, command_line, widget_proxy, live):
+        addr = command_line.split()[1]
+        try:
+            address, port = addr.split(':')
+        except ValueError:
+            self.parent.wCommand.value = 'Usage: /connect <address>:<port>'
+            self.parent.display()
+            return
+
+        try:
+            port = int(port)
+        except ValueError:
+            self.parent.wCommand.value = 'Port must be a number'
+            self.parent.display()
+            return
+
+        #Instructions to the Communication Thread to make the connection
+        self.parent.parentApp.stream.address = address
+        self.parent.parentApp.stream.port = port
+        self.parent.parentApp.stream.make_connection.set()
+
+        self.parent.wCommand.value = 'Making connection...'
+        self.parent.display()
+
+        #Wait for the Communication Thread to tell us it is done
+        self.parent.parentApp.stream.connect_event.wait()
+        self.parent.parentApp.stream.connect_event.clear()
+
+        if not self.parent.parentApp.stream.connected:  # Failed
+            self.parent.wCommand.value = 'Could not connect'
+            self.parent.display()
+        else:
+            self.parent.wCommand.value = 'Connected!'
+
+    def disconnect(self, command_line, widget_proxy, live):
+        if self.parent.parentApp.stream.loop is not None:
+            self.parent.parentApp.stream.loop.stop()
+        self.parent.parentApp.stream.make_connection.clear()
+
+
+class SlashOnlyTextCommandBoxTraditional(TextCommandBoxTraditional):
+    BEGINNING_OF_COMMAND_LINE_CHARS = ("/",)
+
+
+#The new "Mutt-like" basis for the Kerminal interface
+class KerminalForm(FormMuttActiveTraditional, FormWithLiveWidgets):
+    STATUS_WIDGET_X_OFFSET = 1
+    STATUS_WIDGET_CLASS = LiveTextfield
+    ACTION_CONTROLLER = KerminalCommands
+    COMMAND_WIDGET_CLASS = SlashOnlyTextCommandBoxTraditional
 
 
 class Connection(FormWithLiveWidgets):

@@ -1,7 +1,7 @@
 # encoding: utf-8
 
 from npyscreen.wgwidget import Widget
-from npyscreen import TitleText
+from npyscreen import TitleText, Textfield
 
 from functools import wraps
 
@@ -56,4 +56,8 @@ class LiveWidget(Widget):
 
 
 class LiveTitleText(TitleText, LiveWidget):
+    pass
+
+
+class LiveTextfield(Textfield, LiveWidget):
     pass

@@ -38,8 +38,7 @@ class TelemachusProtocol(WebSocketClientProtocol):
         log.debug('WebSocket connect open.')
 
         #Below here are things that should be executed once at each connection
-        self.send_json_message({'+': ['v.altitude', 't.universalTime',
-                                      'v.missionTime', 'p.paused']})
+        self.send_json_message({'+': ['v.name', 'p.paused']})
 
         @asyncio.coroutine
         def consume_queue():
