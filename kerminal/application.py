@@ -11,17 +11,6 @@ from .communication import CommsThread
 from functools import partial
 from time import strftime
 
-#Original demo
-#class KerminalApp(NPSAppManaged):
-#    keypress_timeout_default = 1  # this is as short as possible
-#    #keypress_timeout = 1
-#
-#    def onStart(self):
-#        self.stream = CommsThread()
-#        self.stream.start()
-#        self.addForm('MAIN', forms.ConnectQuery)
-#        self.addFormClass('CONNECTION', forms.Connection)
-
 import logging
 
 log = logging.getLogger('Kerminal.application')
@@ -47,5 +36,6 @@ class KerminalApp(NPSAppManaged):
         #add_live method
         self.main_form.live_widgets.append(self.main_form.wStatus1)
         self.main_form.live_widgets.append(self.main_form.wStatus2)
+        self.main_form.live_widgets.append(self.main_form.wInfo)
         self.main_form.wStatus1.feed = partial(status_line1, self.stream)
         self.main_form.wStatus2.feed = lambda: ' Kerminal Command Line '

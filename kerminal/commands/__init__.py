@@ -32,8 +32,7 @@ def connect(args, widget_proxy, parent_form, stream):
     try:
         port = int(args['<port>'])
     except ValueError:
-        #TODO: modify something in the state of parent
-        #parent_form.wCommand.value = 'Port must be a number'
+        parent_form.wInfo.feed = 'Port must be a number'
         return
 
     #Instructions to the Communication Thread to make the connection
@@ -41,18 +40,16 @@ def connect(args, widget_proxy, parent_form, stream):
     stream.port = port
     stream.make_connection.set()
 
-    #TODO: modify something in the state of parent
-    #parent_form.wCommand.value = 'Making connection...'
+    parent_form.wInfo.feed = 'Making connection...'
 
     #Wait for the Communication Thread to tell us it is done
     stream.connect_event.wait()
     stream.connect_event.clear()
 
     if not stream.connected:  # Failed
-        #TODO: modify something in the state of parent
-        parent_form.wCommand.value = 'Could not connect'
+        parent_form.wInfo.feed = 'Could not connect'
     else:
-        parent_form.wCommand.value = 'Connected!'
+        parent_form.wInfo.feed = 'Connected!'
 
 
 def demo(args, widget_proxy, parent_form, stream):
@@ -95,6 +92,7 @@ def demo(args, widget_proxy, parent_form, stream):
         widget_instance.values = form.format(**data).split('\n')
 
     parent_form.wMain.feed = partial(multiline_feed, parent_form.wMain)
+    parent_form.wInfo.feed = 'Showing Demo!'
 
 
 def disconnect(args, widget_proxy, parent_form, stream):

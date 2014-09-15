@@ -15,13 +15,12 @@ import npyscreen
 import logging
 import weakref
 import curses
-import json
 
 log = logging.getLogger('kerminal.forms')
 
 
-from .widget_bases import LiveTitleText, LiveTextfield
-from .telemachus_api import orbit_plots_names, orbit_plotables
+from .widget_bases import LiveTitleText, LiveTextfield, ResettingLiveTextfield
+from .telemachus_api import orbit_plots_names
 from .commands import KerminalCommands
 
 
@@ -79,7 +78,8 @@ class TextCommandBoxToggled(TextCommandBox):
         self.value = 'Press TAB to enter commands'
         self.toggle_handler = curses.ascii.TAB
         self.handlers.update({curses.KEY_HOME: self.h_cursor_beginning,
-                              curses.KEY_END: self.h_cursor_end,})
+                              curses.KEY_END: self.h_cursor_end,
+                              })
 
     def h_cursor_beginning(self, *args, **kwargs):
         self.cursor_position = 0
@@ -143,15 +143,38 @@ class SlashOnlyTextCommandBoxTraditional(TextCommandBoxTraditional):
     BEGINNING_OF_COMMAND_LINE_CHARS = ("/",)
 
 
+class FormMuttActiveTraditionalWithInfo(FormMuttActiveTraditional):
+    """
+    A minor hack on FormMuttActiveTraditional to give me a status info bar
+    """
+    INFO_WIDGET_CLASS = ResettingLiveTextfield
+
+    def draw_form(self):
+        super(FormMuttActiveTraditionalWithInfo, self).draw_form()
+        MAXY, MAXX = self.lines, self.columns
+        self.curses_pad.hline(MAXY-3-self.BLANK_LINES_BASE, 0, curses.ACS_BULLET, MAXX - 1)
+
+    def create(self):
+        super(FormMuttActiveTraditionalWithInfo, self).create()
+        MAXY, MAXX = self.lines, self.columns
+        self.wInfo = self.add(self.__class__.INFO_WIDGET_CLASS,
+                              rely=MAXY - 3 - self.BLANK_LINES_BASE,
+                              relx=0,
+                              editable=False,
+                              )
+        self.wMain.max_height = -3
+        self.wInfo.important = True
+        self.nextrely = 3
+
+
 #The new "Mutt-like" basis for the Kerminal interface
-class KerminalForm(FormMuttActiveTraditional, FormWithLiveWidgets):
+class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
     STATUS_WIDGET_X_OFFSET = 1
     STATUS_WIDGET_CLASS = LiveTextfield
     ACTION_CONTROLLER = KerminalCommands
     #COMMAND_WIDGET_CLASS = SlashOnlyTextCommandBoxTraditional
     COMMAND_WIDGET_CLASS = TextCommandBoxToggled
     #MAIN_WIDGET_CLASS   = MultiLine
-
 
     #I may actually just make a new class in the future to partially
     #re-implement the FormMuttActive.
@@ -177,62 +200,3 @@ class KerminalForm(FormMuttActiveTraditional, FormWithLiveWidgets):
         #Here's the stuff for live updating the multiline widget
         self.wMain.feed()
         self.display()
-
-
-#Here be the older demo interface stuff; pre-Mutt-like
-class Connection(FormWithLiveWidgets):
-    OK_BUTTON_TEXT = 'DROP CONNECTION'
-
-    def create(self):
-        #self.parentApp.stream.start()
-        self.add(npyscreen.FixedText, value='You have successfully connected!')
-        feedf = lambda k: partial(self.parentApp.stream.data.get, k)
-        self.time_w = self.add_live(LiveTitleText,
-                                    name='Time',
-                                    value='',
-                                    editable=False,
-                                    feed=partial(strftime, "%Y-%m-%d %H:%M:%S")
-                                    )
-        self.alt = self.add_live(LiveTitleText,
-                                 name='V. Altitude',
-                                 value='',
-                                 editable=False,
-                                 feed=feedf('v.altitude')
-                                 )
-        self.mission_time = self.add_live(LiveTitleText,
-                                          name='V. Mission Time',
-                                          value='',
-                                          editable=False,
-                                          feed=feedf('v.missionTime')
-                                          )
-        self.univ_time = self.add_live(LiveTitleText,
-                                       name='Universal Time',
-                                       value='',
-                                       editable=False,
-                                       feed=feedf('t.universalTime')
-                                       )
-        pausef = lambda f: 'True' if f() else 'False'
-        self.paused = self.add_live(LiveTitleText,
-                                    name='Game Paused',
-                                    value='',
-                                    editable=False,
-                                    feed=partial(pausef, feedf('p.paused'))
-                                    )
-
-        #This illustrates that I am able to inject messages to be sent to the
-        #server based on UI actions
-        self.orbit = {}
-        subscribe_keys = list(orbit_plots_names.keys())
-        for key, nameval in orbit_plots_names.items():
-            self.orbit[key] = self.add_live(LiveTitleText,
-                                            name=nameval,
-                                            editable=False,
-                                            feed=feedf(key))
-
-        self.parentApp.stream.msg_queue.put({'+': subscribe_keys})
-
-    def afterEditing(self):
-        self.parentApp.stream.loop.stop()
-        self.parentApp.stream.make_connection.clear()
-        #self.parentApp.stream.connect_event.clear()
-        self.parentApp.setNextForm('MAIN')
