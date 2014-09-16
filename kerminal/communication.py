@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+from .telemachus_api import plotables
+
 import asyncio
 import json
 import logging
@@ -12,11 +14,18 @@ from autobahn.asyncio.websocket import WebSocketClientProtocol,\
 log = logging.getLogger('kerminal.communication')
 log.setLevel(logging.DEBUG)
 
+#Initialize all plotable variables in the dict
 global LIVE_DATA
-LIVE_DATA = {}
+LIVE_DATA = {k: 0 for k in plotables}
 
 global MSG_QUEUE
 MSG_QUEUE = queue.Queue()
+
+#All of this LOGGING stuff is for data logs, not runtime logs
+global LOGGING_ON, LOGGING_VARS, LOGGING_FILE
+LOGGING_ON = False
+LOGGING_VARS = ['t.universalTime', 'v.missionTime']
+LOGGING_FILE = 'data.log'
 
 
 class TelemachusProtocol(WebSocketClientProtocol):
@@ -38,7 +47,8 @@ class TelemachusProtocol(WebSocketClientProtocol):
         log.debug('WebSocket connect open.')
 
         #Below here are things that should be executed once at each connection
-        self.send_json_message({'+': ['v.name', 'p.paused']})
+        self.send_json_message({'+': ['v.name', 'p.paused', 't.universalTime',
+                                      'v.missionTime']})
 
         @asyncio.coroutine
         def consume_queue():
@@ -64,8 +74,15 @@ class TelemachusProtocol(WebSocketClientProtocol):
             #Should always get a json message
             msg = json.loads(payload.decode('utf-8'))
             log.debug('Message: {0}'.format(msg))
-            global LIVE_DATA
-            LIVE_DATA.update(msg)
+            if not msg['p.paused']:
+                global LIVE_DATA
+                LIVE_DATA.update(msg)
+                global LOGGING_ON
+                global LOGGING_VARS
+                if LOGGING_ON:
+                    with open(LOGGING_FILE, 'a') as out:
+                        out.write(' '.join([msg[v] for v in LOGGING_VARS])+'\n')
+
 
     def onError(self, *args):
         log.debug('Error: {0}'.format(args))

@@ -8,6 +8,7 @@ from .. import __version__
 
 from docopt import docopt, DocoptExit
 from functools import wraps, partial
+import json
 import logging
 import sys
 
