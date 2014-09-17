@@ -22,10 +22,12 @@ global MSG_QUEUE
 MSG_QUEUE = queue.Queue()
 
 #All of this LOGGING stuff is for data logs, not runtime logs
-global LOGGING_ON, LOGGING_VARS, LOGGING_FILE
-LOGGING_ON = False
-LOGGING_VARS = ['t.universalTime', 'v.missionTime']
-LOGGING_FILE = 'data.log'
+global DATA_LOG_ON, DATA_LOG_VARS, DATA_LOG_FILE
+DATA_LOG_ON = False
+DATA_LOG_VARS = set(['t.universalTime',
+                     'v.missionTime',
+                     'sys.time'])
+DATA_LOG_FILE = 'kerminaldata.csv'
 
 
 class TelemachusProtocol(WebSocketClientProtocol):
@@ -42,6 +44,7 @@ class TelemachusProtocol(WebSocketClientProtocol):
 
     def onConnect(self, response):
         log.info('Connecting to server at: {0}'.format(response.peer))
+        self.data_log = None
 
     def onOpen(self):
         log.debug('WebSocket connect open.')
@@ -74,15 +77,16 @@ class TelemachusProtocol(WebSocketClientProtocol):
             #Should always get a json message
             msg = json.loads(payload.decode('utf-8'))
             log.debug('Message: {0}'.format(msg))
+            #global LIVE_DATA
+            #LIVE_DATA.update(msg)
             if not msg['p.paused']:
                 global LIVE_DATA
                 LIVE_DATA.update(msg)
-                global LOGGING_ON
-                global LOGGING_VARS
-                if LOGGING_ON:
-                    with open(LOGGING_FILE, 'a') as out:
-                        out.write(' '.join([msg[v] for v in LOGGING_VARS])+'\n')
-
+                #global LOGGING_ON
+                #global LOGGING_VARS
+                #if LOGGING_ON:
+                    #with open(LOGGING_FILE, 'a') as out:
+                        #out.write(' '.join([msg[v] for v in LOGGING_VARS])+'\n')
 
     def onError(self, *args):
         log.debug('Error: {0}'.format(args))
@@ -110,6 +114,11 @@ class CommsThread(threading.Thread):
 
         global MSG_QUEUE
         self.msg_queue = MSG_QUEUE
+
+        global DATA_LOG_ON, DATA_LOG_VARS, DATA_LOG_FILE
+        self.data_log_on = DATA_LOG_ON
+        self.data_log_vars = DATA_LOG_VARS
+        self.data_log_file = DATA_LOG_FILE
 
     def connect(self):
         url = 'ws://{0}:{1}/datalink'.format(self.address, str(self.port))

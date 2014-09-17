@@ -184,7 +184,6 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         self.wMain.interested_in_mouse_even_when_not_editable = False
         #Allow the recall of previous widget
         self.previous_widget = self.wMain
-        log.info(self.previous_widget)
         self.wMain.feed = lambda: ''
 
     def go_back(self, *args, **kwargs):
