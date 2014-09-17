@@ -52,6 +52,7 @@ class TelemachusProtocol(WebSocketClientProtocol):
         #Below here are things that should be executed once at each connection
         self.send_json_message({'+': ['v.name', 'p.paused', 't.universalTime',
                                       'v.missionTime']})
+        #Because
 
         @asyncio.coroutine
         def consume_queue():
@@ -82,11 +83,10 @@ class TelemachusProtocol(WebSocketClientProtocol):
             if not msg['p.paused']:
                 global LIVE_DATA
                 LIVE_DATA.update(msg)
-                #global LOGGING_ON
-                #global LOGGING_VARS
-                #if LOGGING_ON:
-                    #with open(LOGGING_FILE, 'a') as out:
-                        #out.write(' '.join([msg[v] for v in LOGGING_VARS])+'\n')
+                global DATA_LOG_ON, DATA_LOG_VARS, DATA_LOG_FILE
+                if DATA_LOG_VARS:
+                    with open(DATA_LOG_FILE, 'a') as out:
+                        out.write(' '.join([msg[v] for v in DATA_LOG_VARS]) + '\n')
 
     def onError(self, *args):
         log.debug('Error: {0}'.format(args))

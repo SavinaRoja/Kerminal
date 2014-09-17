@@ -70,6 +70,9 @@ def demo(args, widget_proxy, parent_form, stream):
     """
 
     log.info('demo command called')
+    if not stream.connected:
+        parent_form.wInfo.feed = 'Not connected!'
+        return
 
     #Subscribe to the necessary data
     stream.msg_queue.put({'+': orbit_plotables})
@@ -117,7 +120,9 @@ def disconnect(args, widget_proxy, parent_form, stream):
     log.info('disconnect command called')
     if stream.loop is not None:
         stream.loop.stop()
-    stream.make_connection.clear()
+        stream.make_connection.clear()
+    else:
+        parent_form.wInfo.feed = 'Not connected!'
 
 
 def haiku(args, widget_proxy, parent_form, stream):
@@ -194,6 +199,7 @@ def logs(args, widget_proxy, parent_form, stream):
 
     if stream.data_log_on and any([args['all'], args['none'], args['file']]):
         parent_form.wInfo.feed = 'Parameters can\'t be changed while log is active'
+        return
 
     if args['on']:
         if stream.data_log_on:
@@ -308,6 +314,7 @@ def send(args, widget_proxy, parent_form, stream):
     log.info('info command called')
 
     if not stream.connected:
+        parent_form.wInfo.feed = 'Not connected!'
         return
     msg = args['<json-string>']
     log.debug(msg)
@@ -337,6 +344,7 @@ def sub(args, widget_proxy, parent_form, stream):
     log.info('sub command called')
 
     if not stream.connected:
+        parent_form.wInfo.feed = 'Not connected!'
         return
 
     stream.msg_queue.put({'+': args['<api-variable>']})
@@ -358,15 +366,24 @@ def unsub(args, widget_proxy, parent_form, stream):
     log.info('unsub command called')
 
     if not stream.connected:
+        parent_form.wInfo.feed = 'Not connected!'
         return
 
-    #Prohibit the ability to unsub from p.paused
-    checked = [v for v in args['<api-variable>'] if v != 'p.paused']
-    if len(checked) != len(args['<api-variable>']):
-        log.debug('Prohibited unsubbing from p.paused')
-        parent_stream.wInfo.feed = 'Unsubbing from p.paused is prohibited'
+    #Prohibit unsubbing from certain variables
+    mandated = ['p.paused', 'v.name']
+    removed = []
+    kept = []
+    for var in args['<api-variable>']:
+        if var in mandated:
+            removed.append(var)
+        else:
+            kept.append(var)
 
-    stream.msg_queue.put({'-': checked})
+    if removed:
+        log.debug('{0} prevented from being unsubbed'.format(removed))
+        parent_stream.wInfo.feed = 'May not unsub: ' + ','.join(removed)
+
+    stream.msg_queue.put({'-': kept})
 
 
 def quits(args, widget_proxy, parent_form, stream):
@@ -434,7 +451,7 @@ class KerminalCommands(object):
                               version='Kerminal v {0}'.format(__version__),
                               argv=argv)
             except DocoptExit as e:
-                #TODO: modify something in the state of parent
+                self.parent.wInfo.feed = 'command usage incorrect. See "help {0}"'.format(command)
                 log.debug(e)
             else:
                 command_func(args,
@@ -496,6 +513,8 @@ class KerminalCommands(object):
    -- Disconnect from the Telemachus server if currently connected.
   help
    -- Print this help message.
+  log [commands]
+   -- Utilities for logging data to file; see "help log" for in depth details.
   send <json_string>
    -- Send an arbitrary JSON string to the Telemachus server (if connected).
   sub <api_variable> ...
