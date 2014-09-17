@@ -199,3 +199,7 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         #Here's the stuff for live updating the multiline widget
         self.wMain.feed()
         self.display()
+
+    def resize(self):
+        super(FormMuttActiveTraditionalWithInfo, self).resize()
+        self.wInfo.rely = self.lines - 3 - self.BLANK_LINES_BASE
