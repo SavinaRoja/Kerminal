@@ -8,6 +8,7 @@ import json
 import logging
 import threading
 import queue
+import time
 
 from autobahn.asyncio.websocket import WebSocketClientProtocol,\
                                        WebSocketClientFactory
@@ -104,15 +105,15 @@ class TelemachusProtocol(WebSocketClientProtocol):
 
     def onConnect(self, response):
         log.info('Connecting to server at: {0}'.format(response.peer))
-        self.data_log = None
+        self.data_log = None  # This will be None, or an open file
 
     def onOpen(self):
         log.debug('WebSocket connect open.')
 
         #Below here are things that should be executed once at each connection
         self.send_json_message({'+': ['v.name', 'p.paused', 't.universalTime',
-                                      'v.missionTime']})
-        #Because
+                                      'v.missionTime'],
+                                'rate': 2000})
 
         @asyncio.coroutine
         def consume_queue():
@@ -137,16 +138,28 @@ class TelemachusProtocol(WebSocketClientProtocol):
         else:
             #Should always get a json message
             msg = json.loads(payload.decode('utf-8'))
+            msg['sys.time'] = time.time()
             log.debug('Message: {0}'.format(msg))
             #global LIVE_DATA
             #LIVE_DATA.update(msg)
             if not msg['p.paused']:
                 global LIVE_DATA
                 LIVE_DATA.update(msg)
+                #Logging stuff
                 global DATA_LOG_ON, DATA_LOG_VARS, DATA_LOG_FILE
-                if DATA_LOG_VARS:
-                    with open(DATA_LOG_FILE, 'a') as out:
-                        out.write(' '.join([msg[v] for v in DATA_LOG_VARS]) + '\n')
+                if DATA_LOG_ON:  # Logging is enabled
+                    #If self.data_log is None, but DATA_LOG_ON is True, then
+                    #logging was just enabled and we need to open the file and
+                    #wite the headers
+                    if self.data_log is None:
+                        self.data_log = open(DATA_LOG_FILE, 'a', -1)
+                        self.data_log.write(','.join(DATA_LOG_VARS) + '\n')
+                    #Write the log vars to the file
+                    self.data_log.write(','.join([str(LIVE_DATA[v]) for v in DATA_LOG_VARS]) + '\n')
+                else:
+                    if self.data_log is not None:
+                        self.data_log.close()
+                        self.data_log = None
 
     def onError(self, *args):
         log.debug('Error: {0}'.format(args))
@@ -175,10 +188,28 @@ class CommsThread(threading.Thread):
         global MSG_QUEUE
         self.msg_queue = MSG_QUEUE
 
-        global DATA_LOG_ON, DATA_LOG_VARS, DATA_LOG_FILE
-        self.data_log_on = DATA_LOG_ON
+        global DATA_LOG_VARS
         self.data_log_vars = DATA_LOG_VARS
-        self.data_log_file = DATA_LOG_FILE
+
+    @property
+    def data_log_on(self):
+        global DATA_LOG_ON
+        return DATA_LOG_ON
+
+    @data_log_on.setter
+    def data_log_on(self, val):
+        global DATA_LOG_ON
+        DATA_LOG_ON = val
+
+    @property
+    def data_log_file(self):
+        global DATA_LOG_FILE
+        return DATA_LOG_FILE
+
+    @data_log_file.setter
+    def data_log_file(self, val):
+        global DATA_LOG_FILE
+        DATA_LOG_FILE = val
 
     def connect(self):
         url = 'ws://{0}:{1}/datalink'.format(self.address, str(self.port))

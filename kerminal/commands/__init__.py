@@ -13,7 +13,7 @@ import logging
 import os
 import sys
 
-from ..telemachus_api import orbit_plots_names, orbit_plotables
+from ..telemachus_api import orbit_plots_names, plotables
 
 log = logging.getLogger('kerminal.commands')
 log.debug('commands')
@@ -148,6 +148,7 @@ def haiku(args, widget_proxy, parent_form, stream):
     parent_form.wMain.feed = partial(multiline_feed, parent_form.wMain)
 
 
+#TODO: logs is big enough to deserve its own file
 def logs(args, widget_proxy, parent_form, stream):
     """
     log
@@ -197,26 +198,41 @@ def logs(args, widget_proxy, parent_form, stream):
     log.info('log command called')
     log.debug(args)
 
-    if stream.data_log_on and any([args['all'], args['none'], args['file']]):
+    #Status is a valid command regardless of connection status or log activity
+    if args['status']:
+
+        def multiline_feed(widget_instance):
+
+            form = '''
+ Data Logging Active : {0}
+ Data Log File       : {1}
+ Logging Variables   : \
+'''.format(str(stream.data_log_on), os.path.abspath(stream.data_log_file))
+
+            first = True
+            for var in stream.data_log_vars:
+                if first:
+                    first = False
+                    form += (var + '\n')
+                else:
+                    form += '                       {0}\n'.format(var)
+
+            widget_instance.values = form.split('\n')
+
+        parent_form.wMain.feed = partial(multiline_feed, parent_form.wMain)
+        parent_form.wInfo.feed = 'Showing data logging status'
+
+    #This makes sure that add, remove, all, none, and file cannot be used while
+    #logging is active
+    if stream.data_log_on and any([args['all'],
+                                   args['none'],
+                                   args['file'],
+                                   args['add'],
+                                   args['remove']]):
         parent_form.wInfo.feed = 'Parameters can\'t be changed while log is active'
         return
 
-    if args['on']:
-        if stream.data_log_on:
-            parent_form.wInfo.feed = 'Logging already active'
-        else:
-            stream.data_log_on = True
-            parent_form.wInfo.feed = 'Logging activated'
-        return
-
-    if args['off']:
-        if not stream.data_log_on:
-            parent_form.wInfo.feed = 'Logging already inactive'
-        else:
-            stream.data_log_on = False
-            parent_form.wInfo.feed = 'Logging deactivated'
-        return
-
+    #File cannot be changed while logging is on, but can be used
     if args['file']:
         if os.path.exists(args['<filename>']):
             if os.path.isdir(args['<filename>']):
@@ -254,31 +270,8 @@ def logs(args, widget_proxy, parent_form, stream):
     if args['all']:
         stream.data_log_vars = set(['sys.time',
                                     't.universalTime',
-                                    'v.missionTime'] + orbit_plotables)
+                                    'v.missionTime'] + plotables)
         return
-
-    if args['status']:
-
-        def multiline_feed(widget_instance):
-
-            form = '''
- Data Logging Active : {0}
- Data Log File       : {1}
- Logging Variables   : \
-'''.format(str(stream.data_log_on), os.path.abspath(stream.data_log_file))
-
-            first = True
-            for var in stream.data_log_vars:
-                if first:
-                    first = False
-                    form += (var + '\n')
-                else:
-                    form += '                       {0}\n'.format(var)
-
-            widget_instance.values = form.split('\n')
-
-        parent_form.wMain.feed = partial(multiline_feed, parent_form.wMain)
-        parent_form.wInfo.feed = 'Showing data logging status'
 
     if args['add']:
         for var in args['<api-variable>']:
@@ -291,6 +284,27 @@ def logs(args, widget_proxy, parent_form, stream):
             except KeyError:
                 #TODO: set info message?
                 pass
+
+    #The following sub commands make no sense if we are not connected already
+    if not stream.connected:
+        parent_form.wInfo.feed = 'Not connected!'
+        return
+
+    if args['on']:
+        if stream.data_log_on:
+            parent_form.wInfo.feed = 'Logging already active'
+        else:
+            stream.data_log_on = True
+            parent_form.wInfo.feed = 'Logging activated'
+        return
+
+    if args['off']:
+        if not stream.data_log_on:
+            parent_form.wInfo.feed = 'Logging already inactive'
+        else:
+            stream.data_log_on = False
+            parent_form.wInfo.feed = 'Logging deactivated'
+        return
 
 
 def send(args, widget_proxy, parent_form, stream):
