@@ -13,6 +13,8 @@ import logging
 import os
 import sys
 
+from ..communication import OrderedSet
+
 from ..telemachus_api import orbit_plots_names, plotables
 
 log = logging.getLogger('kerminal.commands')
@@ -263,14 +265,13 @@ def logs(args, widget_proxy, parent_form, stream):
     if args['none']:
         #Some values should not be removed by this command, however it shouldn't
         #add them if they are already missing
-        preserve = set(['t.universalTime', 'v.missionTime'])
+        preserve = OrderedSet(['t.universalTime', 'v.missionTime'])
         stream.data_log_vars = preserve.intersection(stream.data_log_vars)
         return
 
     if args['all']:
-        stream.data_log_vars = set(['sys.time',
-                                    't.universalTime',
-                                    'v.missionTime'] + plotables)
+        for var in ['t.universalTime', 'v.missionTime', 'sys.time'] + plotables:
+            stream.data_log_vars.add(var)
         return
 
     if args['add']:
@@ -349,7 +350,10 @@ def sub(args, widget_proxy, parent_form, stream):
     Subscribe to one or more Telemachus data variables (if connected).
 
     Usage:
-      sub <api-variable> ...
+      sub (<api-variable> ... | --all)
+
+    Options:
+      -a --all    Subscribe to all plotable api variables.
 
     Example:
       sub v.altitude o.period
@@ -361,7 +365,12 @@ def sub(args, widget_proxy, parent_form, stream):
         parent_form.wInfo.feed = 'Not connected!'
         return
 
-    stream.msg_queue.put({'+': args['<api-variable>']})
+    import time
+
+    if args['--all']:
+        stream.msg_queue.put({'+': plotables})
+    else:
+        stream.msg_queue.put({'+': args['<api-variable>']})
 
 
 def unsub(args, widget_proxy, parent_form, stream):
@@ -436,7 +445,8 @@ class KerminalCommands(object):
                           'send': send,
                           'sub': sub,
                           'unsub': unsub,
-                          'quit': quits}
+                          'quit': quits,
+                          'exit': quits}
         #self.create()
 
     #def add_action(self, command, function, live):

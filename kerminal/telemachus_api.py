@@ -87,7 +87,8 @@ target_plotables = ['tar.o.sma'            # Target Semimajor Axis
                     'tar.o.eccentricity',  # Target Eccentricity
                     'tar.o.period',        # Target Orbital Period
                     'tar.o.relativeVelocity',  # Target Relative Velocity
-                    'tar.o.trueAnomaly',       # Target True Anomaly
+                    #Sends improperly encoded text back!
+                    #'tar.o.trueAnomaly',       # Target True Anomaly
                     'tar.o.orbitingBody',      # Target Orbiting Body
                     'tar.o.argumentOfPeriapsis',     # Target Argument of Periapsis
                     'tar.o.timeToTransition1',       # Target Time to Transition 1
@@ -102,29 +103,30 @@ docking_plotables = ['dock.ax',  # Docking x Angle
                      'dock.y',   # Target y Distance
                      ]
 
-body_plotables = ['b.name',                      # Body Name
-                  'b.maxAtmosphere',             # Body Max Atmosphere
-                  'b.radius',                    # Body Radius
-                  'b.number',                    # Number of Bodies
-                  'b.o.gravParameter',           # Body Gravitational Parameter
-                  'b.o.relativeVelocity',        # Relative Velocity
-                  'b.o.PeA',                     # Periapsis
-                  'b.o.ApA',                     # Apoapsis
-                  'b.o.timeToAp',                # Time to Apoapsis
-                  'b.o.timeToPe',                # Time to Periapsis
-                  'b.o.inclination',             # Inclination
-                  'b.o.eccentricity',            # Eccentricity
-                  'b.o.period',                  # Orbital Period
-                  'b.o.argumentOfPeriapsis',     # Argument of Periapsis
-                  'b.o.timeToTransition1',       # Time to Transition 1
-                  'b.o.timeToTransition2',       # Time to Transition 2
-                  'b.o.sma',                     # Semimajor Axis
-                  'b.o.lan',                     # Longitude of Ascending Node
-                  'b.o.maae',                    # Mean Anomaly at Epoch
-                  'b.o.timeOfPeriapsisPassage',  # Time of Periapsis Passage
-                  'b.o.trueAnomaly',             # True Anomaly
-                  'b.o.phaseAngle',              # Phase Angle
-                  ]
+#In my tests, none of these can be used. Breaks the connection
+#body_plotables = ['b.name',                      # Body Name
+                  #'b.maxAtmosphere',             # Body Max Atmosphere
+                  #'b.radius',                    # Body Radius
+                  #'b.number',                    # Number of Bodies
+                  #'b.o.gravParameter',           # Body Gravitational Parameter
+                  #'b.o.relativeVelocity',        # Relative Velocity
+                  #'b.o.PeA',                     # Periapsis
+                  #'b.o.ApA',                     # Apoapsis
+                  #'b.o.timeToAp',                # Time to Apoapsis
+                  #'b.o.timeToPe',                # Time to Periapsis
+                  #'b.o.inclination',             # Inclination
+                  #'b.o.eccentricity',            # Eccentricity
+                  #'b.o.period',                  # Orbital Period
+                  #'b.o.argumentOfPeriapsis',     # Argument of Periapsis
+                  #'b.o.timeToTransition1',       # Time to Transition 1
+                  #'b.o.timeToTransition2',       # Time to Transition 2
+                  #'b.o.sma',                     # Semimajor Axis
+                  #'b.o.lan',                     # Longitude of Ascending Node
+                  #'b.o.maae',                    # Mean Anomaly at Epoch
+                  #'b.o.timeOfPeriapsisPassage',  # Time of Periapsis Passage
+                  #'b.o.trueAnomaly',             # True Anomaly
+                  #'b.o.phaseAngle',              # Phase Angle
+                  #]
 
 navball_plotables = ['n.heading',     # Heading
                      'n.pitch',       # Pitch
@@ -136,7 +138,7 @@ navball_plotables = ['n.heading',     # Heading
 
 vessel_plotables = ['v.altitude',            # Altitude
                     'v.heightFromTerrain',   # Height from Terrain
-                    'v.terrainheight',       # Terrain Height
+                    'v.terrainHeight',       # Terrain Height
                     'v.missionTime',         # Mission Time
                     'v.surfaceVelocity',     # Surface Velocity
                     'v.surfaceVelocityx',    # Surface Velocity x
@@ -152,6 +154,7 @@ vessel_plotables = ['v.altitude',            # Altitude
                     'v.lat',                 # Latitude
                     'v.dynamicPressure',     # Dynamic Pressure
                     'v.name',                # Name
+                    'v.body',                # Body Name
                     'v.angleToPrograde',     # Angle to Prograde
                     ]
 
@@ -193,7 +196,7 @@ orbit_plots_names = {'o.relativeVelocity': 'Relative Velocity',
                      'o.trueAnomaly': 'True Anomaly',
                      }
 
-sensor_plotables = ['s.sensor',       # Sensor Information [string sensor type]
+sensor_plotables = [#'s.sensor',       # Sensor Information [string sensor type]
                     's.sensor.temp',  # Temperature sensor information
                     's.sensor.pres',  # Pressure sensor information
                     's.sensor.grav',  # Gravity sensor information
@@ -209,7 +212,8 @@ api_plotables = ['a.version',  # Telemachus Version
 time_warp_plotables = ['t.universalTime',  # Universal Time
                        ]
 
-plotables = target_plotables + docking_plotables + body_plotables + \
+#plotables = target_plotables + docking_plotables + body_plotables + \
+plotables = target_plotables + docking_plotables + \
             navball_plotables + vessel_plotables + orbit_plotables + \
             sensor_plotables + paused_plotables + api_plotables + \
             time_warp_plotables

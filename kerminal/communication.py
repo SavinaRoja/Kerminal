@@ -246,6 +246,8 @@ class CommsThread(threading.Thread):
         ### MAINTAINING the connection
         try:
             self.loop.run_forever()
+        except Exception as e:
+            log.exception(e)
         finally:
             #Tear down the loop
             self.loop.close()
