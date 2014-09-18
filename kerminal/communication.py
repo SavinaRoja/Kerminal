@@ -153,9 +153,9 @@ class TelemachusProtocol(WebSocketClientProtocol):
                     #wite the headers
                     if self.data_log is None:
                         self.data_log = open(DATA_LOG_FILE, 'a', -1)
-                        self.data_log.write(','.join(DATA_LOG_VARS) + '\n')
+                        self.data_log.write(';'.join(DATA_LOG_VARS) + '\n')
                     #Write the log vars to the file
-                    self.data_log.write(','.join([str(LIVE_DATA[v]) for v in DATA_LOG_VARS]) + '\n')
+                    self.data_log.write(';'.join([str(LIVE_DATA[v]) for v in DATA_LOG_VARS]) + '\n')
                 else:
                     if self.data_log is not None:
                         self.data_log.close()

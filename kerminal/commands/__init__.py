@@ -15,7 +15,7 @@ import sys
 
 from ..communication import OrderedSet
 
-from ..telemachus_api import orbit_plots_names, plotables
+from ..telemachus_api import orbit_plots_names, plotables , orbit_plotables
 
 log = logging.getLogger('kerminal.commands')
 log.debug('commands')

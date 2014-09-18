@@ -72,7 +72,7 @@ mapview_actions = ['m.toggleMapView',  # Toggle Map View
                    ]
 
 #Plotables are things you can subscribe to; will be sent at each pulse
-target_plotables = ['tar.o.sma'            # Target Semimajor Axis
+target_plotables = ['tar.o.sma',           # Target Semimajor Axis
                     'tar.o.lan',           # Target Longitude of Ascending Node
                     'tar.o.maae',          # Target Mean Anomaly at Epoch
                     'tar.name',            # Target Name
