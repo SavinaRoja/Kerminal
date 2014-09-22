@@ -30,7 +30,28 @@ def connect(args, widget_proxy, parent_form, stream):
     Connect to a Telemachus server if not already connected.
 
     Usage:
-      connect <host-address> <port>
+      connect <host-address> [<port>]
+
+    Arguments:
+      <host-address>    The address of the computer acting as Telemachus server.
+      <port>            The port for the connection. If not supplied, this command
+                        will use the Telemachus default of 8085.
+
+    Discussion and Examples:
+
+    If you are using Kerminal on the same computer running Kerbal Space Program and
+    Telemachus, your command will probably use "localhost".
+      "connect localhost [<port>]"
+
+    If you are connecting to a computer on your local network, you should use your
+    local network address. For some, this address may look like "192.168.1.X".
+      "connect 192.168.1.2 [<port>]"
+
+    In order to connect over the internet, you will need to know the IP address of
+    the computer in question. IP addresses may be hard to remember and can change
+    over time, so it is recommended that you use a DNS service (free options exist).
+    One will also likely need to configure port forwarding for the port being used.
+      "connect myserver.domain.com [<port>]"
     """
 
     log.info('connect command called')
@@ -38,11 +59,14 @@ def connect(args, widget_proxy, parent_form, stream):
     if stream.connected:
         return
 
-    try:
-        port = int(args['<port>'])
-    except ValueError:
-        parent_form.wInfo.feed = 'Port must be a number'
-        return
+    if args['<port>'] is None:
+        port = 8085
+    else:
+        try:
+            port = int(args['<port>'])
+        except ValueError:
+            parent_form.wInfo.feed = 'Port must be a number'
+            return
 
     #Instructions to the Communication Thread to make the connection
     stream.address = args['<host-address>']
@@ -78,6 +102,8 @@ def demo(args, widget_proxy, parent_form, stream):
 
     #Subscribe to the necessary data
     stream.msg_queue.put({'+': orbit_plotables})
+    #for var in orbit_plotables:
+        #stream.subscription_manager.add(var)
 
     #Create a function that will update the multline widget's .values
     def multiline_feed(widget_instance):
@@ -85,7 +111,7 @@ def demo(args, widget_proxy, parent_form, stream):
         form = '''
  Relative Velocity  : {o_relativeVelocity:0.1f}   (m/s)
  Periapsis          : {o_PeA:0.1f} (m)
- Apoapsis           : {o_PeA:0.1f} (m)
+ Apoapsis           : {o_ApA:0.1f} (m)
  Time to Apoapsis   : {o_timeToAp:0.1f} (s)
  Time to Periapsis  : {o_timeToPe:0.1f} (s)
  Orbit Inclination  : {o_inclination:0.1f}
@@ -102,7 +128,6 @@ def demo(args, widget_proxy, parent_form, stream):
  True Anomaly       : {o_trueAnomaly:0.1f}
 '''
         data = {key.replace('.', '_'): getter(key) for key in orbit_plotables}
-        log.info(data)
 
         widget_instance.values = form.format(**data).split('\n')
 
@@ -223,6 +248,7 @@ def logs(args, widget_proxy, parent_form, stream):
 
         parent_form.wMain.feed = partial(multiline_feed, parent_form.wMain)
         parent_form.wInfo.feed = 'Showing data logging status'
+        return
 
     #This makes sure that add, remove, all, none, and file cannot be used while
     #logging is active
@@ -265,26 +291,34 @@ def logs(args, widget_proxy, parent_form, stream):
     if args['none']:
         #Some values should not be removed by this command, however it shouldn't
         #add them if they are already missing
-        preserve = OrderedSet(['t.universalTime', 'v.missionTime'])
-        stream.data_log_vars = preserve.intersection(stream.data_log_vars)
+        preserve = ['t.universalTime', 'v.missionTime']
+        for var in stream.data_log_vars:
+            if var not in preserve:
+                stream.data_log_vars.remove(var)
+                stream.subscription_manager.drop(var)
         return
 
     if args['all']:
         for var in ['t.universalTime', 'v.missionTime', 'sys.time'] + plotables:
             stream.data_log_vars.add(var)
+            if var != 'sys.time':
+                stream.subscription_manager.add(var)
         return
 
     if args['add']:
         for var in args['<api-variable>']:
             stream.data_log_vars.add(var)
+            stream.subscription_manager.add(var)
 
     if args['remove']:
         for var in args['<api-variable>']:
             try:
                 stream.data_log_vars.remove(var)
+                #stream.data_log_vars.discard(var)
             except KeyError:
-                #TODO: set info message?
-                pass
+                parent_form.wInfo.feed = 'Log variable already not in use'
+            else:
+                stream.subscription_manager.drop(var)
 
     #The following sub commands make no sense if we are not connected already
     if not stream.connected:
@@ -306,6 +340,43 @@ def logs(args, widget_proxy, parent_form, stream):
             stream.data_log_on = False
             parent_form.wInfo.feed = 'Logging deactivated'
         return
+
+
+def rate(args, widget_proxy, parent_form, stream):
+    """
+    rate
+
+    Change the rate at which Kerminal receives updates from Telemachus
+
+    Usage:
+      rate <interval>
+
+    Arguments:
+      <interval>    The interval length in milliseconds between messages from
+                    Telemachus. Input should be an integer, will be rounded if a
+                    decimal number is used. Divide 1 by this number to get the rate
+                    in Hz.
+
+    Examples:
+      "rate 200": Kerminal will receive about 5 updates every second.
+      "rate 2000": Kerminal will receive about 1 update every 2 seconds.
+    """
+    log.info('rate command called')
+    if not stream.connected:
+        parent_form.wInfo.feed = 'Not connected!'
+        return
+
+    try:
+        interval = int(args['<interval>'])
+    except ValueError:
+        try:
+            interval_f = float(args['<interval>'])
+        except ValueError:
+            parent_form.wInfo.feed = 'Rate interval must be a number!'
+            return
+        else:
+            interval = round(interval_f)
+    stream.msg_queue.put({'rate': interval})
 
 
 def send(args, widget_proxy, parent_form, stream):
@@ -343,72 +414,6 @@ def send(args, widget_proxy, parent_form, stream):
         stream.msg_queue.put(msg_dict)
 
 
-def sub(args, widget_proxy, parent_form, stream):
-    """
-    sub
-
-    Subscribe to one or more Telemachus data variables (if connected).
-
-    Usage:
-      sub (<api-variable> ... | --all)
-
-    Options:
-      -a --all    Subscribe to all plotable api variables.
-
-    Example:
-      sub v.altitude o.period
-    """
-
-    log.info('sub command called')
-
-    if not stream.connected:
-        parent_form.wInfo.feed = 'Not connected!'
-        return
-
-    import time
-
-    if args['--all']:
-        stream.msg_queue.put({'+': plotables})
-    else:
-        stream.msg_queue.put({'+': args['<api-variable>']})
-
-
-def unsub(args, widget_proxy, parent_form, stream):
-    """
-    unsub
-
-    Unsubscribe from one or more Telemachus data variables (if connected).
-
-    Usage:
-      unsub <api-variable> ...
-
-    Example:
-      unsub v.altitude o.period
-    """
-
-    log.info('unsub command called')
-
-    if not stream.connected:
-        parent_form.wInfo.feed = 'Not connected!'
-        return
-
-    #Prohibit unsubbing from certain variables
-    mandated = ['p.paused', 'v.name']
-    removed = []
-    kept = []
-    for var in args['<api-variable>']:
-        if var in mandated:
-            removed.append(var)
-        else:
-            kept.append(var)
-
-    if removed:
-        log.debug('{0} prevented from being unsubbed'.format(removed))
-        parent_stream.wInfo.feed = 'May not unsub: ' + ','.join(removed)
-
-    stream.msg_queue.put({'-': kept})
-
-
 def quits(args, widget_proxy, parent_form, stream):
     """
     quit
@@ -442,22 +447,11 @@ class KerminalCommands(object):
                           'haiku': haiku,
                           'help': self.helps,
                           'log': logs,
+                          'rate': rate,
                           'send': send,
-                          'sub': sub,
-                          'unsub': unsub,
                           'quit': quits,
                           'exit': quits}
         #self.create()
-
-    #def add_action(self, command, function, live):
-        #self._action_list.append({'command': command,
-                                  #'function': function,
-                                  ##'live': live
-                                  #})
-
-    #def process_command_live(self, command_line, control_widget_proxy):
-        ##No live command processing
-        #pass
 
     def process_command_complete(self, command_line, control_widget_proxy):
         for comm in command_line.split(';'):
@@ -529,7 +523,7 @@ class KerminalCommands(object):
   of its function. Items in angle-brackets like this "<item>" are called
   arguments and are meant to be replaced by appropriate text.
 
-  connect <host-address>:<port>
+  connect <host-address> [<port>]
    -- Connect to a Telemachus server if not already connected.
   demo
    -- Show a demonstration of data streaming if connected.
@@ -541,10 +535,6 @@ class KerminalCommands(object):
    -- Utilities for logging data to file; see "help log" for in depth details.
   send <json_string>
    -- Send an arbitrary JSON string to the Telemachus server (if connected).
-  sub <api_variable> ...
-   -- Subscribe to one or more Telemachus data variables (if connected).
-  unsub <api_variable> ...
-   -- Unsubscribe from one or more Telemachus data variables (if connected).
   quit
    -- Shut down Kerminal.
 '''.format(version=__version__)

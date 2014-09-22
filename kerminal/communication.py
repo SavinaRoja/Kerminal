@@ -25,7 +25,6 @@ MSG_QUEUE = queue.Queue()
 
 
 class OrderedSet(collections.MutableSet):
-
     def __init__(self, iterable=None):
         self.end = end = []
         end += [None, end, end]         # sentinel node for doubly linked list
@@ -82,7 +81,44 @@ class OrderedSet(collections.MutableSet):
             return len(self) == len(other) and list(self) == list(other)
         return set(self) == set(other)
 
-#All of this LOGGING stuff is for data logs, not runtime logs
+
+class SubscriptionManager(object):
+    """
+    Basically a set of semaphores, I'm still refining this concept...
+    """
+    def __init__(self, queue):
+        self.map = {}
+        self.queue = queue
+
+    def __len__(self):
+        return len(self.map)
+
+    def __contains__(self, key):
+        return key in self.map
+
+    def __iter__(self):
+        for i in self.map:
+            yield i
+
+    def add(self, key):
+        if key in self.map:  # Seen before
+            if self.map[key] == 0:
+                self.queue.put(('+', key))
+            self.map[key] += 1
+        else:  # Not seen before
+            self.queue.put(('+', key))
+            self.map[key] = 1
+
+    #Naming this "drop" for now to help interfaces straight in my head
+    def drop(self, key):
+        if key in self.map:  # Seen before
+            self.map[key] -= 1
+            if self.map[key] == 0:
+                self.queue.put(('-', key))
+        else:
+            pass  # Can't drop what you haven't seen
+
+
 global DATA_LOG_ON, DATA_LOG_VARS, DATA_LOG_FILE
 DATA_LOG_ON = False
 DATA_LOG_VARS = OrderedSet(['t.universalTime',
@@ -111,37 +147,60 @@ class TelemachusProtocol(WebSocketClientProtocol):
         log.debug('WebSocket connect open.')
 
         #Below here are things that should be executed once at each connection
-        self.send_json_message({'+': ['v.name', 'p.paused', 't.universalTime',
+        self.send_json_message({'+': ['v.name',
+                                      'p.paused',
+                                      't.universalTime',
                                       'v.missionTime'],
-                                'rate': 2000})
+                                #'rate': 1000,
+                                })
 
         @asyncio.coroutine
         def consume_queue():
             global MSG_QUEUE
+            composition = {}
             while True:
                 try:
-                    msg_dict = MSG_QUEUE.get_nowait()
+                    item = MSG_QUEUE.get_nowait()
                 except queue.Empty:
+                    if composition:
+                        self.send_json_message(composition)
+                        composition = {}
                     #The sleep time here could be changed, or I could set this
                     #up to be signaled by an event
                     yield from asyncio.sleep(0.1)
                 else:
-                    self.send_json_message(msg_dict)
+                    try:
+                        action, key = item
+                    except ValueError:  # If the item is a dict, send it on
+                        self.send_json_message(item)
+                    else:
+                        if action in composition:
+                            composition[action].append(key)
+                        else:
+                            composition[action] = [key]
+                        log.debug(composition)
 
         asyncio.Task(consume_queue())
 
     def onMessage(self, payload, isBinary):
-        #The Telemachus server should never send data as binary, but it can't
-        #hurt at this stage to enable more debugging
+        #The Telemachus server should never send binary data, but just in case
         if isBinary:
             log.debug('Received binary data: {0}'.format(payload))
         else:
-            #Should always get a json message
-            msg = json.loads(payload.decode('utf-8'))
-            msg['sys.time'] = time.time()
-            log.debug('Message: {0}'.format(msg))
-            #global LIVE_DATA
-            #LIVE_DATA.update(msg)
+            #Telemachus server should always send text as json
+            try:
+                msg = json.loads(payload.decode('utf-8'))
+            except Exception as e:  # In case of bad encoding or other problems
+                log.exception(e)
+                log.debug('Could not parse: {0}'.format(payload))
+                return
+            else:
+                msg['sys.time'] = time.time()
+                log.debug('Message Received: {0}'.format(msg))
+            #The client subscribes to p.paused on connection, it should always
+            #be present and is exempt from subscription management
+            #When the game is paused, Kerminal will act as though it has not
+            #received the message.
             if not msg['p.paused']:
                 global LIVE_DATA
                 LIVE_DATA.update(msg)
@@ -150,7 +209,7 @@ class TelemachusProtocol(WebSocketClientProtocol):
                 if DATA_LOG_ON:  # Logging is enabled
                     #If self.data_log is None, but DATA_LOG_ON is True, then
                     #logging was just enabled and we need to open the file and
-                    #wite the headers
+                    #write the headers
                     if self.data_log is None:
                         self.data_log = open(DATA_LOG_FILE, 'a', -1)
                         self.data_log.write(';'.join(DATA_LOG_VARS) + '\n')
@@ -190,6 +249,9 @@ class CommsThread(threading.Thread):
 
         global DATA_LOG_VARS
         self.data_log_vars = DATA_LOG_VARS
+
+        #global SUBSCRIPTION_SET
+        self.subscription_manager = SubscriptionManager(MSG_QUEUE)
 
     @property
     def data_log_on(self):
@@ -254,6 +316,10 @@ class CommsThread(threading.Thread):
             self.loop = None
             self.make_connection.clear()  # Clear so we can wait for it again
             self.connected = False
+            #Reset important connection state variables
+            self.data_log_vars = OrderedSet(['t.universalTime',
+                                             'v.missionTime',
+                                             'sys.time'])
 
     def init_loop(self):
         self.loop = asyncio.new_event_loop()

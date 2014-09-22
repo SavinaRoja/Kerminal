@@ -212,11 +212,11 @@ api_plotables = ['a.version',  # Telemachus Version
 time_warp_plotables = ['t.universalTime',  # Universal Time
                        ]
 
-#plotables = target_plotables + docking_plotables + body_plotables + \
+#These consitute the safe set of plotable values to work with
 plotables = target_plotables + docking_plotables + \
             navball_plotables + vessel_plotables + orbit_plotables + \
-            sensor_plotables + paused_plotables + api_plotables + \
-            time_warp_plotables
+            sensor_plotables + api_plotables + time_warp_plotables\
+
 
 #Plain API Entries: how exactly do these work?
 resources = ['r.resource',         # Resource Information [string resource type]
