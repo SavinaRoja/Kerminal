@@ -49,8 +49,10 @@ if __name__ == '__main__':
 
     if args['--ui-log']:
         base_log = logging.getLogger('kerminal')
-        base_log.addHandler(logging.FileHandler('kerminal.log'))
-        base_log.setLevel(get_level(args['--ui-log']))
+        l = logging.FileHandler('kerminal.log')
+        l.setLevel(get_level(args['--ui-log']))
+        base_log.addHandler(l)
+
 
     app = KerminalApp()
     app.run()

@@ -24,62 +24,28 @@ global MSG_QUEUE
 MSG_QUEUE = queue.Queue()
 
 
-class OrderedSet(collections.MutableSet):
-    def __init__(self, iterable=None):
-        self.end = end = []
-        end += [None, end, end]         # sentinel node for doubly linked list
-        self.map = {}                   # key --> [key, prev, next]
-        if iterable is not None:
-            self |= iterable
+from .utils import OrderedSet
 
-    def __len__(self):
-        return len(self.map)
 
-    def __contains__(self, key):
-        return key in self.map
+class OrderedSetWithSubscriptionHook(OrderedSet):
+
+    def __init__(self, subscription_manager, iterable=None):
+        self.subscription_manager = subscription_manager
+        super(OrderedSetWithSubscriptionHook, self).__init__(iterable)
 
     def add(self, key):
         if key not in self.map:
             end = self.end
             curr = end[1]
             curr[2] = end[1] = self.map[key] = [key, curr, end]
+            self.subscription_manager.add(key)
 
     def discard(self, key):
         if key in self.map:
             key, prev, next = self.map.pop(key)
             prev[2] = next
             next[1] = prev
-
-    def __iter__(self):
-        end = self.end
-        curr = end[2]
-        while curr is not end:
-            yield curr[0]
-            curr = curr[2]
-
-    def __reversed__(self):
-        end = self.end
-        curr = end[1]
-        while curr is not end:
-            yield curr[0]
-            curr = curr[1]
-
-    def pop(self, last=True):
-        if not self:
-            raise KeyError('set is empty')
-        key = self.end[1][0] if last else self.end[2][0]
-        self.discard(key)
-        return key
-
-    def __repr__(self):
-        if not self:
-            return '%s()' % (self.__class__.__name__,)
-        return '%s(%r)' % (self.__class__.__name__, list(self))
-
-    def __eq__(self, other):
-        if isinstance(other, OrderedSet):
-            return len(self) == len(other) and list(self) == list(other)
-        return set(self) == set(other)
+            self.subscription_manager.drop(key)
 
 
 class SubscriptionManager(object):
@@ -89,6 +55,7 @@ class SubscriptionManager(object):
     def __init__(self, queue):
         self.map = {}
         self.queue = queue
+        self.no_transmit = ['sys.time']
 
     def __len__(self):
         return len(self.map)
@@ -100,13 +67,17 @@ class SubscriptionManager(object):
         for i in self.map:
             yield i
 
+    def put(self, action, key):
+        if key not in self.no_transmit:
+            self.queue.put((action, key))
+
     def add(self, key):
         if key in self.map:  # Seen before
             if self.map[key] == 0:
-                self.queue.put(('+', key))
+                self.put('+', key)
             self.map[key] += 1
         else:  # Not seen before
-            self.queue.put(('+', key))
+            self.put('+', key)
             self.map[key] = 1
 
     #Naming this "drop" for now to help interfaces straight in my head
@@ -114,16 +85,14 @@ class SubscriptionManager(object):
         if key in self.map:  # Seen before
             self.map[key] -= 1
             if self.map[key] == 0:
-                self.queue.put(('-', key))
+                self.put('-', key)
         else:
             pass  # Can't drop what you haven't seen
 
 
 global DATA_LOG_ON, DATA_LOG_VARS, DATA_LOG_FILE
 DATA_LOG_ON = False
-DATA_LOG_VARS = OrderedSet(['t.universalTime',
-                            'v.missionTime',
-                            'sys.time'])
+DATA_LOG_VARS = None  # set to OrderedSetWithSubscriptionHook by CommsThread
 DATA_LOG_FILE = 'kerminaldata.csv'
 
 
@@ -136,7 +105,7 @@ class TelemachusProtocol(WebSocketClientProtocol):
         much more than `sendMessage` directly.
         """
         msg = json.dumps(message_dict, separators=(',', ':')).encode('utf-8')
-        log.debug('Sending message {0}'.format(msg))
+        log.info('Sending message {0}'.format(msg))
         self.sendMessage(msg)
 
     def onConnect(self, response):
@@ -163,6 +132,7 @@ class TelemachusProtocol(WebSocketClientProtocol):
                     item = MSG_QUEUE.get_nowait()
                 except queue.Empty:
                     if composition:
+                        log.debug(composition)
                         self.send_json_message(composition)
                         composition = {}
                     #The sleep time here could be changed, or I could set this
@@ -178,7 +148,6 @@ class TelemachusProtocol(WebSocketClientProtocol):
                             composition[action].append(key)
                         else:
                             composition[action] = [key]
-                        log.debug(composition)
 
         asyncio.Task(consume_queue())
 
@@ -247,11 +216,16 @@ class CommsThread(threading.Thread):
         global MSG_QUEUE
         self.msg_queue = MSG_QUEUE
 
-        global DATA_LOG_VARS
-        self.data_log_vars = DATA_LOG_VARS
+        #global DATA_LOG_VARS
+        #self.data_log_vars = DATA_LOG_VARS
 
-        #global SUBSCRIPTION_SET
         self.subscription_manager = SubscriptionManager(MSG_QUEUE)
+        self.data_log_vars = OrderedSetWithSubscriptionHook(self.subscription_manager,
+                                                            ['t.universalTime',
+                                                             'v.missionTime',
+                                                             'sys.time'])
+        global DATA_LOG_VARS
+        DATA_LOG_VARS = self.data_log_vars
 
     @property
     def data_log_on(self):
@@ -316,10 +290,14 @@ class CommsThread(threading.Thread):
             self.loop = None
             self.make_connection.clear()  # Clear so we can wait for it again
             self.connected = False
+
             #Reset important connection state variables
-            self.data_log_vars = OrderedSet(['t.universalTime',
-                                             'v.missionTime',
-                                             'sys.time'])
+            global MSG_QUEUE
+            self.subscription_manager = SubscriptionManager(MSG_QUEUE)
+            self.data_log_vars = OrderedSetWithSubscriptionHook(self.subscription_manager,
+                                                            ['t.universalTime',
+                                                             'v.missionTime',
+                                                             'sys.time'])
 
     def init_loop(self):
         self.loop = asyncio.new_event_loop()

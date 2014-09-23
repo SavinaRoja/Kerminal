@@ -55,11 +55,11 @@ flight_actions = ['f.stage',         # Stage
                   'f.ag8',           # Action Group 8 [optional bool on/off]
                   'f.ag9',           # Action Group 9 [optional bool on/off]
                   'f.ag10',          # Action Group 10 [optional bool on/off]
-                  'f.rcsValue',      # Query RCS value (plotable)
-                  'f.sasValue',      # Query SAS value (plotable)
-                  'f.lightValue',    # Query light value (plotable)
-                  'f.brakeValue',    # Query brake value (plotable)
-                  'f.gearValue',     # Query gear value (plotable)
+                  #'v.rcsValue',      # Query RCS value (plotable)
+                  #'v.sasValue',      # Query SAS value (plotable)
+                  #'v.lightValue',    # Query light value (plotable)
+                  #'v.brakeValue',    # Query brake value (plotable)
+                  #'v.gearValue',     # Query gear value (plotable)
                   ]
 
 time_warp_actions = ['t.timeWarp',       # Time Warp [int rate]
@@ -73,11 +73,11 @@ mapview_actions = ['m.toggleMapView',  # Toggle Map View
 
 #Plotables are things you can subscribe to; will be sent at each pulse
 flight_plotables = ['f.throttle',      # Throttle
-                    'f.rcsValue',      # Query RCS value
-                    'f.sasValue',      # Query SAS value
-                    'f.lightValue',    # Query light value
-                    'f.brakeValue',    # Query brake value
-                    'f.gearValue',     # Query gear value
+                    'v.rcsValue',      # Query RCS value
+                    'v.sasValue',      # Query SAS value
+                    'v.lightValue',    # Query light value
+                    'v.brakeValue',    # Query brake value
+                    'v.gearValue',     # Query gear value
                     ]
 
 target_plotables = ['tar.o.sma',           # Target Semimajor Axis

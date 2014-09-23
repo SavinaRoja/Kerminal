@@ -223,7 +223,6 @@ def logs(args, widget_proxy, parent_form, stream):
     """
 
     log.info('log command called')
-    log.debug(args)
 
     #Status is a valid command regardless of connection status or log activity
     if args['status']:
@@ -301,14 +300,13 @@ def logs(args, widget_proxy, parent_form, stream):
     if args['all']:
         for var in ['t.universalTime', 'v.missionTime', 'sys.time'] + plotables:
             stream.data_log_vars.add(var)
-            if var != 'sys.time':
-                stream.subscription_manager.add(var)
+
         return
 
     if args['add']:
         for var in args['<api-variable>']:
             stream.data_log_vars.add(var)
-            stream.subscription_manager.add(var)
+            #stream.subscription_manager.add(var)
 
     if args['remove']:
         for var in args['<api-variable>']:
