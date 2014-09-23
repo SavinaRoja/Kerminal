@@ -101,9 +101,9 @@ def demo(args, widget_proxy, parent_form, stream):
         return
 
     #Subscribe to the necessary data
-    stream.msg_queue.put({'+': orbit_plotables})
-    #for var in orbit_plotables:
-        #stream.subscription_manager.add(var)
+    #stream.msg_queue.put({'+': orbit_plotables})
+    for var in orbit_plotables:
+        stream.subscription_manager.add(var)
 
     #Create a function that will update the multline widget's .values
     def multiline_feed(widget_instance):
