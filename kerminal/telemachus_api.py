@@ -34,7 +34,7 @@ vessel_actions = ['v.setYaw',    # Yaw [float yaw]
 
 flight_actions = ['f.stage',         # Stage
                   'f.setThrottle',   # Set Throttle [float magnitude]
-                  'f.throttle',      # Throttle ; what does this do?
+                  #'f.throttle',      # Throttle (plotable)
                   'f.throttleUp',    # Throttle Up
                   'f.throttleZero',  # Throttle Zero
                   'f.throttleFull',  # Throttle Full
@@ -55,11 +55,11 @@ flight_actions = ['f.stage',         # Stage
                   'f.ag8',           # Action Group 8 [optional bool on/off]
                   'f.ag9',           # Action Group 9 [optional bool on/off]
                   'f.ag10',          # Action Group 10 [optional bool on/off]
-                  'f.rcsValue',      # Query RCS value
-                  'f.sasValue',      # Query SAS value
-                  'f.lightValue',    # Query light value
-                  'f.brakeValue',    # Query brake value
-                  'f.gearValue',     # Query gear value
+                  'f.rcsValue',      # Query RCS value (plotable)
+                  'f.sasValue',      # Query SAS value (plotable)
+                  'f.lightValue',    # Query light value (plotable)
+                  'f.brakeValue',    # Query brake value (plotable)
+                  'f.gearValue',     # Query gear value (plotable)
                   ]
 
 time_warp_actions = ['t.timeWarp',       # Time Warp [int rate]
@@ -72,6 +72,14 @@ mapview_actions = ['m.toggleMapView',  # Toggle Map View
                    ]
 
 #Plotables are things you can subscribe to; will be sent at each pulse
+flight_plotables = ['f.throttle',      # Throttle
+                    'f.rcsValue',      # Query RCS value
+                    'f.sasValue',      # Query SAS value
+                    'f.lightValue',    # Query light value
+                    'f.brakeValue',    # Query brake value
+                    'f.gearValue',     # Query gear value
+                    ]
+
 target_plotables = ['tar.o.sma',           # Target Semimajor Axis
                     'tar.o.lan',           # Target Longitude of Ascending Node
                     'tar.o.maae',          # Target Mean Anomaly at Epoch
@@ -213,7 +221,7 @@ time_warp_plotables = ['t.universalTime',  # Universal Time
                        ]
 
 #These consitute the safe set of plotable values to work with
-plotables = target_plotables + docking_plotables + \
+plotables = flight_plotables + target_plotables + docking_plotables + \
             navball_plotables + vessel_plotables + orbit_plotables + \
             sensor_plotables + api_plotables + time_warp_plotables\
 
