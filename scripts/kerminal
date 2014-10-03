@@ -30,6 +30,7 @@ import sys
 
 log = logging.getLogger('kerminal.launcher')
 
+
 def get_level(level_string):
     """
     Returns an appropriate logging level integer from a string name
@@ -52,7 +53,6 @@ if __name__ == '__main__':
         l = logging.FileHandler('kerminal.log')
         l.setLevel(get_level(args['--ui-log']))
         base_log.addHandler(l)
-
 
     app = KerminalApp()
     app.run()

@@ -68,6 +68,12 @@ class LiveTextfield(Textfield, LiveWidget):
 
 
 class ResettingLiveWidget(Widget):
+    """
+    This kind of live widget is distinguished from LiveWidget in that it is
+    configured to return its value to a preset one after a certain length of
+    time. Its interface for changing the feed is essentially the same as
+    LiveWidget.
+    """
     VALUE_PREFIX = 'INFO: '
     RESET_TIME = 5.0
 

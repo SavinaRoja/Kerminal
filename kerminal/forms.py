@@ -167,7 +167,6 @@ class FormMuttActiveTraditionalWithInfo(FormMuttActiveTraditional):
         self.nextrely = 3
 
 
-#The new "Mutt-like" basis for the Kerminal interface
 class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
     STATUS_WIDGET_X_OFFSET = 1
     STATUS_WIDGET_CLASS = LiveTextfield
