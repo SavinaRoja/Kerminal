@@ -15,7 +15,7 @@ def long_description():
     return(readme_text)
 
 setup(name='Kerminal',
-      version='0.0.1',
+      version='0.0.3',
       description='Kerbal Space Program in the Terminal, via Telemachus',
       long_description=long_description(),
       author='Paul Barton',

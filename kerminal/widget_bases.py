@@ -130,3 +130,51 @@ class ResettingLiveWidget(Widget):
 
 class ResettingLiveTextfield(Textfield, ResettingLiveWidget):
     pass
+
+
+#This is as yet unimplemented, but the concept goes as such: WidgetContainers
+#will be rectangular containers for collections of LiveWidgets and it is the
+#WidgetTileLayer's job to arrange these containers so that they do not overlap
+#or run off the window's edge. It should be dynamic enough to allow window
+#resizing and the addition or removal of WidgetContainers without resetting
+class WidgetTileLayer(Widget):
+    """
+    The WidgetTileLayer
+    """
+    def __init__(self):
+        super(WidgetTileLayer, self).__init__()
+
+
+class WidgetContainer(Widget):
+
+    def __init__(self,
+                 screen,
+                 #begin_entry_at=16,
+                 field_width=None,
+                 #value=None,  # value is rather meaningless here
+                 #use_two_lines=True,
+                 hidden=False,
+                 labelColor='LABEL',
+                 allow_override_begin_entry_at=True,
+                 **kwargs):
+
+        self.hidden = hidden
+        self.field_width_request = field_width
+        self.labelColor = labelColor
+        self.allow_override_begin_entry_at = allow_override_begin_entry_at
+        self.entry_widgets = []
+        super(WidgetContainer, self).__init__(screen, **kwargs)
+
+        if self.name is None:
+            self.name = 'Unlabeled'
+
+        #Contained widgets will inherit some, but not all of kwargs, _passon is
+        #a filtered copy
+        self._passon = kwargs.copy()
+        dangerous_keys = ('relx', 'rely', 'value')
+        for key in dangerous_keys:
+            try:
+                self._passon.pop(key)
+            except KeyError:
+                pass
+
