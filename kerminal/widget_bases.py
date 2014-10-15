@@ -2,10 +2,13 @@
 
 from npyscreen.wgwidget import Widget
 from npyscreen import TitleText, Textfield
+from npyscreen.wgmultiline import MultiLine
 
+import curses
 from functools import wraps
 import logging
 import time
+import sys
 
 log = logging.getLogger('kerminal.widget_bases')
 
@@ -154,19 +157,29 @@ class WidgetContainer(Widget):
                  #value=None,  # value is rather meaningless here
                  #use_two_lines=True,
                  hidden=False,
+                 width=20,
+                 height=4,
                  labelColor='LABEL',
+                 label=None,
+                 dynamic_y=False,  # Allowed to expand height for more widgets?
+                 dynamic_x=False,  # Allowed to expand width for broad widget?
                  allow_override_begin_entry_at=True,
                  **kwargs):
 
         self.hidden = hidden
+        self.width = width
+        self.height = height
         self.field_width_request = field_width
         self.labelColor = labelColor
         self.allow_override_begin_entry_at = allow_override_begin_entry_at
         self.entry_widgets = []
-        super(WidgetContainer, self).__init__(screen, **kwargs)
-
-        if self.name is None:
-            self.name = 'Unlabeled'
+        if label is None:
+            self._label = 'UNLABELED'
+        self.label_widget = None
+        super(WidgetContainer, self).__init__(screen,
+                                              width=width,
+                                              height=height,
+                                              **kwargs)
 
         #Contained widgets will inherit some, but not all of kwargs, _passon is
         #a filtered copy
@@ -178,3 +191,117 @@ class WidgetContainer(Widget):
             except KeyError:
                 pass
 
+        self.contained_widgets = []
+        self.current_contained_rely = self.rely + 1
+
+        self.make_label()
+
+    def make_label(self):
+        #If it overflows onto a widget, it will merely look bad. If it spills
+        #out of the terminal window, it will cause a crash, so we sanitize
+        max_label_length = self.width - 3 # Two for the corners, one for blank
+        if len(self._label) > (max_label_length):
+            label_text = 'TOO LONG!'[:max_label_length]
+        else:
+            label_text = self._label
+        #Centering the label
+        #x_offset = (self.width - len(label_text)) // 2
+        x_offset = 1  # Left justified instead of centered
+        self.label_widget = Textfield(self.parent,
+                                      relx=self.relx + x_offset,
+                                      rely=self.rely,
+                                      width=len(label_text) + 1,
+                                      value=label_text,
+                                      color=self.labelColor)
+
+    def add_widget(self, widget_class):
+        widget = widget_class(self.parent,
+                              relx=self.relx + 2,
+                              rely=self.current_contained_rely,
+                              value=None,
+                              **self._passon)
+        self.current_contained_rely += 1
+        self.contained_widgets.append(widget)
+
+    def remove_widget(self, widget):
+        try:
+            widget_position = self.contained_widgets.index(widget)
+        except ValueError:  # Widget not a member in this container
+            return False
+        else:
+            self.current_contained_rely -= 1
+            for widget in self.contained_widgets[widget_position + 1:]:
+                widget.rely -= 1
+            self.contained_widgets.pop(widget_position)
+
+    def update(self, clear=True):
+        if clear:
+            self.clear()
+        if self.hidden:
+            return False
+
+        for contained in self.contained_widgets:
+            contained.update()
+
+        #Time to draw the box; First the bars
+        self.parent.curses_pad.hline(self.rely, self.relx + 1,
+                                     curses.ACS_HLINE, self.width - 2)
+        self.parent.curses_pad.hline(self.rely + self.height - 1, self.relx + 1,
+                                     curses.ACS_HLINE, self.width - 2)
+        self.parent.curses_pad.vline(self.rely + 1, self.relx,
+                                     curses.ACS_VLINE, self.height - 2)
+        self.parent.curses_pad.vline(self.rely + 1, self.relx + self.width - 1,
+                                     curses.ACS_VLINE, self.height - 2)
+
+        #Now the corners
+
+        #Note! The following is a workaround to fix a bug in Python 3.4.0;
+        #It should probably be addressed in npyscreen internally
+        #For reference: http://bugs.python.org/issue21088
+        #               https://hg.python.org/cpython/rev/c67a19e11a71
+        #Should be fixed in release candidate 1 of 3.4.1, so I only check for
+        #3.4.0
+        #The bug causes the y,x arguments to be inverted to x,y
+
+        def custom_addch(y, x, ch):
+            if sys.version_info[:3] == (3, 4, 0):
+                y, x = x, y
+            self.parent.curses_pad.addch(y, x, ch)
+
+        custom_addch(self.rely, self.relx,
+                     curses.ACS_ULCORNER)
+        custom_addch(self.rely, self.relx + self.width - 1,
+                     curses.ACS_URCORNER)
+        custom_addch(self.rely + self.height - 1, self.relx,
+                     curses.ACS_LLCORNER)
+        custom_addch(self.rely + self.height - 1, self.relx + self.width - 1,
+                     curses.ACS_LRCORNER)
+
+        if self.editing:
+            self.label_widget.show_bold = True
+            self.label_widget.color = 'LABELBOLD'
+        else:
+            self.label_widget.show_bold = False
+            self.label_widget.color = self.labelColor
+
+        self.label_widget.update()
+
+        #for contained in self.contained_widgets:
+            #contained.update()
+
+    def calculate_area_needed(self):
+        return self.height, self.width
+
+    @property
+    def label(self):
+        return self._label
+
+    @label.setter
+    def label(self, val):
+        max_label_length = self.width - 3 # Two for the corners, one for blank
+        if len(val) > (max_label_length):
+            val = 'TOO LONG!'[:max_label_length]
+        self._label = val
+        self.label_widget.value = val
+        self.label_widget.width = len(val) + 1
+        self.label_widget.set_text_widths()
