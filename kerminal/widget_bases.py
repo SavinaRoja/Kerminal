@@ -4,6 +4,7 @@ from npyscreen.wgwidget import Widget
 from npyscreen import TitleText, Textfield
 from npyscreen.wgmultiline import MultiLine
 
+import weakref
 import curses
 from functools import wraps
 import logging
@@ -157,8 +158,8 @@ class WidgetContainer(Widget):
                  #value=None,  # value is rather meaningless here
                  #use_two_lines=True,
                  hidden=False,
-                 width=20,
-                 height=4,
+                 width=26,
+                 height=6,
                  labelColor='LABEL',
                  label=None,
                  dynamic_y=False,  # Allowed to expand height for more widgets?
@@ -214,14 +215,18 @@ class WidgetContainer(Widget):
                                       value=label_text,
                                       color=self.labelColor)
 
-    def add_widget(self, widget_class):
+    def add_widget(self, widget_class, **kwargs):
+        pass_kwargs = self._passon.copy()
+        pass_kwargs.update(kwargs)
         widget = widget_class(self.parent,
                               relx=self.relx + 2,
                               rely=self.current_contained_rely,
-                              value=None,
-                              **self._passon)
+                              **pass_kwargs)
         self.current_contained_rely += 1
         self.contained_widgets.append(widget)
+
+        widget_proxy = weakref.proxy(widget)
+        return widget_proxy
 
     def remove_widget(self, widget):
         try:
@@ -232,6 +237,7 @@ class WidgetContainer(Widget):
             self.current_contained_rely -= 1
             for widget in self.contained_widgets[widget_position + 1:]:
                 widget.rely -= 1
+                widget.resize()
             self.contained_widgets.pop(widget_position)
 
     def update(self, clear=True):

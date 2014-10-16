@@ -7,9 +7,10 @@
 from functools import partial
 from time import strftime
 
+from npyscreen import FixedText, TitleText
 from npyscreen import ButtonPress, Form, FormMuttActiveTraditional
 from npyscreen.fmFormMuttActive import TextCommandBoxTraditional,\
-                                       TextCommandBox, FixedText
+                                       TextCommandBox
 from npyscreen.wgmultiline import MultiLine
 import npyscreen
 import logging
@@ -166,6 +167,7 @@ class FormMuttActiveTraditionalWithInfo(FormMuttActiveTraditional):
         self.wInfo.important = True
         self.nextrely = 3
 
+from time import strftime
 
 class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
     STATUS_WIDGET_X_OFFSET = 1
@@ -184,15 +186,18 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         #Allow the recall of previous widget
         self.previous_widget = self.wMain
         self.wMain.feed = lambda: ''
-        #self.wMain.label = 'SpamSpamSpamSpamSpam'
         self.wMain.editable = False
-        self.wMain.add_widget(FixedText)
-        self.wMain.add_widget(FixedText)
-        self.wMain.add_widget(FixedText)
-        self.wMain.contained_widgets[0].value = 'Spam1'
-        self.wMain.contained_widgets[1].value = 'Spam2'
-        self.wMain.contained_widgets[2].value = 'Spam3'
-        self.wMain.remove_widget(self.wMain.contained_widgets[1])
+        self.wMain.add_widget(FixedText, value='Spam1')
+        spam2 = self.wMain.add_widget(FixedText, value='Spam2')
+        self.wMain.add_widget(FixedText, value='Spam3')
+        self.wMain.add_widget(TitleText, name='Title', value='test')
+        #live = self.wMain.add_widget(TitleText, name='Live', value='live')
+        live = self.wMain.add_widget(LiveTextfield, name='Live', value='live')
+        live.feed = lambda:strftime("%H:%M:%S")
+        self.live_widgets.append(live)
+        self.wMain.remove_widget(spam2)
+
+
 
     def go_back(self, *args, **kwargs):
         log.info('going back')
