@@ -181,13 +181,13 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
     #re-implement the FormMuttActive.
     def __init__(self, *args, **kwargs):
         super(KerminalForm, self).__init__(*args, **kwargs)
-        #This being set to True was causing trouble
-        self.wMain.interested_in_mouse_even_when_not_editable = False
+        #self.wMain.interested_in_mouse_even_when_not_editable = False
+
         #Allow the recall of previous widget
         self.previous_widget = self.wMain
         self.wMain.feed = lambda: ''
         self.wMain.editable = False
-        self.wMain.add_widget(FixedText, value='Spam1')
+        self.wMain.add_widget(FixedText, value='Spam1', widget_id='Spam1')
         spam2 = self.wMain.add_widget(FixedText, value='Spam2')
         self.wMain.add_widget(FixedText, value='Spam3')
         self.wMain.add_widget(TitleText, name='Title', value='test')
@@ -196,8 +196,7 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         live.feed = lambda:strftime("%H:%M:%S")
         self.live_widgets.append(live)
         self.wMain.remove_widget(spam2)
-
-
+        self.wMain.remove_widget(widget_id='Spam1')
 
     def go_back(self, *args, **kwargs):
         log.info('going back')
