@@ -20,7 +20,7 @@ import curses
 log = logging.getLogger('kerminal.forms')
 
 from .widget_bases import LiveTitleText, LiveTextfield, ResettingLiveTextfield,\
-                          WidgetContainer
+                          BoxContainer
 from .telemachus_api import orbit_plots_names
 from .commands import KerminalCommands
 
@@ -175,7 +175,7 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
     ACTION_CONTROLLER = KerminalCommands
     #COMMAND_WIDGET_CLASS = SlashOnlyTextCommandBoxTraditional
     COMMAND_WIDGET_CLASS = TextCommandBoxToggled
-    MAIN_WIDGET_CLASS   = WidgetContainer
+    MAIN_WIDGET_CLASS   = BoxContainer
 
     #I may actually just make a new class in the future to partially
     #re-implement the FormMuttActive.
