@@ -23,6 +23,7 @@ from .widget_bases import LiveTitleText, LiveTextfield, ResettingLiveTextfield,\
                           BoxContainer
 from .telemachus_api import orbit_plots_names
 from .commands import KerminalCommands
+from .container.gridcontainer import GridContainer
 
 
 #The FormWithLiveWidgets class represents one of the first strategies for
@@ -175,7 +176,8 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
     ACTION_CONTROLLER = KerminalCommands
     #COMMAND_WIDGET_CLASS = SlashOnlyTextCommandBoxTraditional
     COMMAND_WIDGET_CLASS = TextCommandBoxToggled
-    MAIN_WIDGET_CLASS   = BoxContainer
+    #MAIN_WIDGET_CLASS   = BoxContainer
+    MAIN_WIDGET_CLASS   = GridContainer
 
     #I may actually just make a new class in the future to partially
     #re-implement the FormMuttActive.
@@ -185,18 +187,22 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
 
         #Allow the recall of previous widget
         self.previous_widget = self.wMain
-        self.wMain.feed = lambda: ''
+        #self.wMain.feed = lambda: ''
         self.wMain.editable = False
-        self.wMain.add_widget(FixedText, value='Spam1', widget_id='Spam1')
-        spam2 = self.wMain.add_widget(FixedText, value='Spam2')
-        self.wMain.add_widget(FixedText, value='Spam3')
-        self.wMain.add_widget(TitleText, name='Title', value='test')
+        box1 = self.wMain.add_widget(BoxContainer, )
+        box2 = self.wMain.add_widget(BoxContainer, )
+        box1.add_widget(FixedText, value='Spam1', widget_id='Spam1')
+        box2.add_widget(FixedText, value='Spam1', widget_id='Spam1')
+        #self.wMain.add_widget(FixedText, value='Spam1', widget_id='Spam1')
+        #spam2 = self.wMain.add_widget(FixedText, value='Spam2')
+        #self.wMain.add_widget(FixedText, value='Spam3')
+        #self.wMain.add_widget(TitleText, name='Title', value='test')
         #live = self.wMain.add_widget(TitleText, name='Live', value='live')
-        live = self.wMain.add_widget(LiveTextfield, name='Live', value='live')
-        live.feed = lambda:strftime("%H:%M:%S")
-        self.live_widgets.append(live)
-        self.wMain.remove_widget(spam2)
-        self.wMain.remove_widget(widget_id='Spam1')
+        #live = self.wMain.add_widget(LiveTextfield, name='Live', value='live')
+        #live.feed = lambda:strftime("%H:%M:%S")
+        #self.live_widgets.append(live)
+        #self.wMain.remove_widget(spam2)
+        #self.wMain.remove_widget(widget_id='Spam1')
 
     def go_back(self, *args, **kwargs):
         log.info('going back')
@@ -209,7 +215,7 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         for live_widget in self.live_widgets:
             live_widget.feed()
         #Here's the stuff for live updating the multiline widget
-        self.wMain.feed()
+        #self.wMain.feed()
         self.display()
 
     def resize(self):
