@@ -154,8 +154,8 @@ class BoxContainer(BaseContainer):
                  width=26,
                  header=None,  # Header text
                  footer=None,  # Footer text
-                 header_justify='right',  # str, one of (left, center, right)
-                 footer_justify='center',  # str, one of (left, center, right)
+                 header_justify='left',  # str, one of (left, center, right)
+                 footer_justify='left',  # str, one of (left, center, right)
                  header_color='LABEL',
                  footer_color='LABEL',
                  *args,
@@ -220,6 +220,10 @@ class BoxContainer(BaseContainer):
             self.footer_widget = None
 
     def _resize(self):
+        self.header_widget.relx = self.relx + 1
+        self.footer_widget.relx = self.relx + 1
+        self.header_widget.rely = self.rely
+        self.footer_widget.rely = self.rely + self.height - 1
         for i, widget in enumerate(self.contained):
             widget.relx = self.relx + self.left_margin
             widget.width = self.width - (self.right_margin + self.left_margin)

@@ -67,6 +67,8 @@ class GridContainer(BaseContainer):
             for cell in self.grid[col_n]:
                 if cell is not None:
                     cell.relx = relx
+        #for each in self.contained:
+            #each.resize()
 
     def set_grid(self):
         grid = []

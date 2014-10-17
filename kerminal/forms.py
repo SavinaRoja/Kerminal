@@ -204,12 +204,10 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         #self.wMain.remove_widget(spam2)
         #self.wMain.remove_widget(widget_id='Spam1')
 
-    def go_back(self, *args, **kwargs):
-        log.info('going back')
-        self.wMain = self.previous_widget
+    #def go_back(self, *args, **kwargs):
+        #log.info('going back')
+        #self.wMain = self.previous_widget
 
-    #It looks like interacting with MultiLine widgets is going to necessitate
-    #a variation in technique
     def while_waiting(self):
         #Updates all live widgets from their feed before updating
         for live_widget in self.live_widgets:
@@ -220,6 +218,12 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
 
     def resize(self):
         super(FormMuttActiveTraditionalWithInfo, self).resize()
+
         self.wInfo.rely = self.lines - 3 - self.BLANK_LINES_BASE
-        self.wStatus2.rely = self.lines-2-self.BLANK_LINES_BASE
+        self.wStatus2.rely = self.lines -2 - self.BLANK_LINES_BASE
+        self.wMain.resize()
+        self.wInfo.resize()
+        self.wStatus1.resize()
+        self.wStatus2.resize()
+        self.wCommand.resize()
         #self.wCommand.rely = self.columns-1-self.BLANK_LINES_BASE
