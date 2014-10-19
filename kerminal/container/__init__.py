@@ -22,23 +22,22 @@ class BaseContainer(Widget):
     """
     def __init__(self,
                  screen,
-                 margin=0,  # Margin to be applied on all sides
-                 top_margin=0,  # Additional margin to be applied on top
-                 bottom_margin=0,  # Additional margin to be applied on bottom
-                 left_margin=0,  # Additional margin to be applied on left
-                 right_margin=0,  # Additional margin to be applied on right
+                 margin=0,  # Applies to all sides unless they are specified
+                 top_margin=None,
+                 bottom_margin=None,
+                 left_margin=None,
+                 right_margin=None,
                  *args,
                  **kwargs):
 
         self.contained = []  # Holds Widgets and Containers
         self.contained_map = {}
 
-        #Margins: each side summed with general margin
         self.margin = margin
-        self.top_margin = top_margin + self.margin
-        self.bottom_margin = bottom_margin + self.margin
-        self.left_margin = left_margin + self.margin
-        self.right_margin = right_margin + self.margin
+        self.top_margin = top_margin
+        self.bottom_margin = bottom_margin
+        self.left_margin = left_margin
+        self.right_margin = right_margin
 
         super(BaseContainer, self).__init__(screen,
                                             *args,
@@ -146,3 +145,55 @@ class BaseContainer(Widget):
         `self.contained`.
         """
         pass
+
+    @property
+    def margin(self):
+        return self._margin
+
+    @margin.setter
+    def margin(self, val):
+        self._margin = val
+
+    @property
+    def top_margin(self):
+        #None indicates unset
+        if self. _top_margin is None:
+            return self.margin
+        return self._top_margin
+
+    @top_margin.setter
+    def top_margin(self, val):
+        self._top_margin = val
+
+    @property
+    def bottom_margin(self):
+        #None indicates unset
+        if self. _bottom_margin is None:
+            return self.margin
+        return self._bottom_margin
+
+    @bottom_margin.setter
+    def bottom_margin(self, val):
+        self._bottom_margin = val
+
+    @property
+    def left_margin(self):
+        #None indicates unset
+        if self. _left_margin is None:
+            return self.margin
+        return self._left_margin
+
+    @left_margin.setter
+    def left_margin(self, val):
+        self._left_margin = val
+
+    @property
+    def right_margin(self):
+        #None indicates unset
+        if self. _right_margin is None:
+            return self.margin
+        return self._right_margin
+
+    @right_margin.setter
+    def right_margin(self, val):
+        self._right_margin = val

@@ -19,11 +19,11 @@ import curses
 
 log = logging.getLogger('kerminal.forms')
 
-from .widget_bases import LiveTitleText, LiveTextfield, ResettingLiveTextfield,\
-                          BoxContainer
+from .widget_bases import LiveTitleText, LiveTextfield, ResettingLiveTextfield
 from .telemachus_api import orbit_plots_names
 from .commands import KerminalCommands
 from .container.gridcontainer import GridContainer
+from .container.boxcontainer import BoxContainer
 
 
 #The FormWithLiveWidgets class represents one of the first strategies for
@@ -189,10 +189,21 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         self.previous_widget = self.wMain
         #self.wMain.feed = lambda: ''
         self.wMain.editable = False
-        box1 = self.wMain.add_widget(BoxContainer, )
-        box2 = self.wMain.add_widget(BoxContainer, )
+        self.wMain.fill_rows_first = False
+        self.wMain.diagnostic = 'X'
+        box1 = self.wMain.add_widget(BoxContainer, width=12)
+        box2 = self.wMain.add_widget(BoxContainer, width=12)
+        box3 = self.wMain.add_widget(BoxContainer, width=12)
+        box4 = self.wMain.add_widget(BoxContainer, width=12)
         box1.add_widget(FixedText, value='Spam1', widget_id='Spam1')
-        box2.add_widget(FixedText, value='Spam1', widget_id='Spam1')
+        box2.add_widget(FixedText, value='Spam2', widget_id='Spam2')
+        box3.add_widget(FixedText, value='Spam3', widget_id='Spam3')
+        box4.add_widget(FixedText, value='Spam4', widget_id='Spam4')
+
+        #The following GridContainer, if working properly, should be entirely
+        #contained within a cell region of its parent GridContainer
+        grid = self.wMain.add_widget(GridContainer, rows=2, cols=2, diagnostic='Z')
+
         #self.wMain.add_widget(FixedText, value='Spam1', widget_id='Spam1')
         #spam2 = self.wMain.add_widget(FixedText, value='Spam2')
         #self.wMain.add_widget(FixedText, value='Spam3')
@@ -220,7 +231,9 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         super(FormMuttActiveTraditionalWithInfo, self).resize()
 
         self.wInfo.rely = self.lines - 3 - self.BLANK_LINES_BASE
-        self.wStatus2.rely = self.lines -2 - self.BLANK_LINES_BASE
+        self.wStatus2.rely = self.lines - 2 - self.BLANK_LINES_BASE
+        self.wMain.height = self.lines - 3 - self.BLANK_LINES_BASE
+        self.wMain.width = self.columns
         self.wMain.resize()
         self.wInfo.resize()
         self.wStatus1.resize()
