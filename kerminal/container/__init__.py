@@ -60,10 +60,10 @@ class BaseContainer(Widget):
         #inherited from the parent Container unless overridden. I suppose this
         #was the impetus for _passon in some npyscreen library classes
 
-        num_contained = len(self.contained)
+        #num_contained = len(self.contained)
         widget = widget_class(self.parent,
-                              relx=self.relx + 2,
-                              rely=num_contained + 1,
+                              relx=self.relx + self.left_margin,
+                              rely=self.rely + self.top_margin,
                               *args,
                               **kwargs)
         self.contained.append(widget)
@@ -143,6 +143,14 @@ class BaseContainer(Widget):
         As this method should generally be encapsulated by `resize`, it should
         not be necessary to call the `resize` method of the items in
         `self.contained`.
+        """
+        pass
+
+    def feed(self):
+        """
+        A Container does not have a meaningful value, so a feed method for a
+        Container does not behave like a feed method for a LiveWidget. Instead,
+        the feed method of a
         """
         pass
 

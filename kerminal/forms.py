@@ -157,18 +157,57 @@ class FormMuttActiveTraditionalWithInfo(FormMuttActiveTraditional):
         self.curses_pad.hline(MAXY-3-self.BLANK_LINES_BASE, 0, curses.ACS_BULLET, MAXX - 1)
 
     def create(self):
-        super(FormMuttActiveTraditionalWithInfo, self).create()
         MAXY, MAXX = self.lines, self.columns
+
+        self.wStatus1 = self.add(self.__class__.STATUS_WIDGET_CLASS,  rely=0,
+                                 relx=self.__class__.STATUS_WIDGET_X_OFFSET,
+                                 editable=False,
+                                 )
+
+        if self.__class__.MAIN_WIDGET_CLASS:
+            self.wMain    = self.add(self.__class__.MAIN_WIDGET_CLASS,
+                                     rely=self.__class__.MAIN_WIDGET_CLASS_START_LINE,
+                                     relx=0,
+                                     max_height=-3,
+                                     )
+        self.wStatus2 = self.add(self.__class__.STATUS_WIDGET_CLASS,  rely=MAXY-2-self.BLANK_LINES_BASE,
+                                        relx=self.__class__.STATUS_WIDGET_X_OFFSET,
+                                        editable=False,
+                                        )
+
+        if not self.__class__.COMMAND_WIDGET_BEGIN_ENTRY_AT:
+            self.wCommand = self.add(self.__class__.COMMAND_WIDGET_CLASS, name=self.__class__.COMMAND_WIDGET_NAME,
+                                    rely = MAXY-1-self.BLANK_LINES_BASE, relx=0,)
+        else:
+            self.wCommand = self.add(self.__class__.COMMAND_WIDGET_CLASS,
+                                     name=self.__class__.COMMAND_WIDGET_NAME,
+                                     rely=MAXY - 1 - self.BLANK_LINES_BASE,
+                                     relx=0,
+                                     begin_entry_at=self.__class__.COMMAND_WIDGET_BEGIN_ENTRY_AT,
+                                     allow_override_begin_entry_at=self.__class__.COMMAND_ALLOW_OVERRIDE_BEGIN_ENTRY_AT
+                                     )
+
         self.wInfo = self.add(self.__class__.INFO_WIDGET_CLASS,
                               rely=MAXY - 3 - self.BLANK_LINES_BASE,
                               relx=0,
                               editable=False,
                               )
-        self.wMain.max_height = -3
+
+        self.wStatus1.important = True
+        self.wStatus2.important = True
         self.wInfo.important = True
         self.nextrely = 3
 
-from time import strftime
+    #def create(self):
+        #self.wInfo = self.add(self.__class__.INFO_WIDGET_CLASS,
+                              #rely=MAXY - 3 - self.BLANK_LINES_BASE,
+                              #relx=0,
+                              #editable=False,
+                              #)
+        #self.wMain.max_height = -3
+        #self.wInfo.important = True
+        #self.nextrely = 3
+
 
 class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
     STATUS_WIDGET_X_OFFSET = 1
@@ -176,11 +215,10 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
     ACTION_CONTROLLER = KerminalCommands
     #COMMAND_WIDGET_CLASS = SlashOnlyTextCommandBoxTraditional
     COMMAND_WIDGET_CLASS = TextCommandBoxToggled
-    #MAIN_WIDGET_CLASS   = BoxContainer
-    MAIN_WIDGET_CLASS   = GridContainer
+    #MAIN_WIDGET_CLASS = BoxContainer
+    MAIN_WIDGET_CLASS = GridContainer
+    FIX_MINIMUM_SIZE_WHEN_CREATED = False
 
-    #I may actually just make a new class in the future to partially
-    #re-implement the FormMuttActive.
     def __init__(self, *args, **kwargs):
         super(KerminalForm, self).__init__(*args, **kwargs)
         #self.wMain.interested_in_mouse_even_when_not_editable = False
@@ -190,30 +228,16 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         #self.wMain.feed = lambda: ''
         self.wMain.editable = False
         self.wMain.fill_rows_first = False
-        self.wMain.diagnostic = 'X'
-        box1 = self.wMain.add_widget(BoxContainer, width=12)
-        box2 = self.wMain.add_widget(BoxContainer, width=12)
-        box3 = self.wMain.add_widget(BoxContainer, width=12)
-        box4 = self.wMain.add_widget(BoxContainer, width=12)
-        box1.add_widget(FixedText, value='Spam1', widget_id='Spam1')
-        box2.add_widget(FixedText, value='Spam2', widget_id='Spam2')
-        box3.add_widget(FixedText, value='Spam3', widget_id='Spam3')
-        box4.add_widget(FixedText, value='Spam4', widget_id='Spam4')
-
-        #The following GridContainer, if working properly, should be entirely
-        #contained within a cell region of its parent GridContainer
-        grid = self.wMain.add_widget(GridContainer, rows=2, cols=2, diagnostic='Z')
-
-        #self.wMain.add_widget(FixedText, value='Spam1', widget_id='Spam1')
-        #spam2 = self.wMain.add_widget(FixedText, value='Spam2')
-        #self.wMain.add_widget(FixedText, value='Spam3')
-        #self.wMain.add_widget(TitleText, name='Title', value='test')
-        #live = self.wMain.add_widget(TitleText, name='Live', value='live')
-        #live = self.wMain.add_widget(LiveTextfield, name='Live', value='live')
-        #live.feed = lambda:strftime("%H:%M:%S")
-        #self.live_widgets.append(live)
-        #self.wMain.remove_widget(spam2)
-        #self.wMain.remove_widget(widget_id='Spam1')
+        #self.wMain.diagnostic = 'X'
+        #self.wMain.margin = 2
+        for i in range(24):
+            box = self.wMain.add_widget(BoxContainer)
+            val = 'Box{0}'.format(i)
+            box.add_widget(FixedText, value=val, widget_id=val)
+            live = box.add_widget(LiveTextfield, name='Live', value='live')
+            live.feed = lambda: strftime("%H:%M:%S")
+            self.live_widgets.append(live)
+        #grid = self.wMain.add_widget(GridContainer, rows=4, cols=5, diagnostic='Z')
 
     #def go_back(self, *args, **kwargs):
         #log.info('going back')
@@ -232,7 +256,7 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
 
         self.wInfo.rely = self.lines - 3 - self.BLANK_LINES_BASE
         self.wStatus2.rely = self.lines - 2 - self.BLANK_LINES_BASE
-        self.wMain.height = self.lines - 3 - self.BLANK_LINES_BASE
+        self.wMain.height = self.lines - 4 - self.BLANK_LINES_BASE
         self.wMain.width = self.columns
         self.wMain.resize()
         self.wInfo.resize()

@@ -15,7 +15,7 @@ class GridContainer(BaseContainer):
 
     def __init__(self,
                  screen,
-                 rows=3,
+                 rows=6,
                  cols=4,
                  fill_rows_first=True,
                  diagnostic=False,
@@ -53,15 +53,17 @@ class GridContainer(BaseContainer):
     def _resize(self):
         def apportion(start, stop, n):
             locs = []
+            cell_size = (stop - start + 1) / n
             for i in range(n):
-                locs.append(round(start + i * ((stop - start + 1) / n)))
+                locs.append(start + round(i * cell_size))
             return locs
 
         #Define the start and stop locations
         rely_start = self.rely + self.top_margin
-        rely_stop = self.rely + self.height - self.bottom_margin
+        rely_stop = self.rely + self.height - self.bottom_margin - 1
         relx_start = self.relx + self.left_margin
         relx_stop = self.relx + self.width - self.right_margin
+        #Asymmetry between width and height?
 
         relys = apportion(rely_start, rely_stop, self.rows)
         relxs = apportion(relx_start, relx_stop, self.cols)
@@ -76,13 +78,15 @@ class GridContainer(BaseContainer):
                     try:
                         height = relys[row_n + 1] - y
                     except IndexError:
-                        height = self.space_available()[0] - y - 1
+                        height = self.space_available()[0] - y - self.bottom_margin - 2
                     try:
-                        width = relxs[col_n + 1] - x - 1
+                        width = relxs[col_n + 1] - x
                     except IndexError:
-                        width = self.space_available()[1] - x - 1
+                        width = self.space_available()[1] - x - self.right_margin
+                        #Asymmetry between width and height?
                     widget.rely, widget.relx = relys[row_n], relxs[col_n]
                     widget.max_height, widget.max_width = height, width
+                    widget.height, widget.width = height, width
 
         #The old code for this, commented prior to later removal
         #Set rely along row slices
