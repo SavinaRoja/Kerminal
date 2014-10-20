@@ -27,11 +27,14 @@ class BaseContainer(Widget):
                  bottom_margin=None,
                  left_margin=None,
                  right_margin=None,
+                 diagnostic=False,
                  *args,
                  **kwargs):
 
         self.contained = []  # Holds Widgets and Containers
         self.contained_map = {}
+
+        self.diagnostic = diagnostic
 
         self.margin = margin
         self.top_margin = top_margin
@@ -156,6 +159,16 @@ class BaseContainer(Widget):
         for widget in self.contained:
             if hasattr(widget, 'feed'):
                 widget.feed()
+
+    def update(self, clear=True):
+        for contained in self.contained:
+            contained.update()
+
+        if self.diagnostic:
+            for col_n in range(self.cols):
+                for row_n in range(self.rows):
+                    y, x = self.grid_coords[col_n][row_n]
+                    self.parent.curses_pad.addch(y, x, self.diagnostic)
 
     @property
     def margin(self):

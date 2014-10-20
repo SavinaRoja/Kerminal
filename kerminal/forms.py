@@ -24,6 +24,7 @@ from .telemachus_api import orbit_plots_names
 from .commands import KerminalCommands
 from .container.gridcontainer import GridContainer
 from .container.boxcontainer import BoxContainer
+from .container.smartcontainer import SmartContainer
 
 
 #The FormWithLiveWidgets class represents one of the first strategies for
@@ -208,6 +209,7 @@ class FormMuttActiveTraditionalWithInfo(FormMuttActiveTraditional):
         #self.wInfo.important = True
         #self.nextrely = 3
 
+from random import randint
 
 class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
     STATUS_WIDGET_X_OFFSET = 1
@@ -216,7 +218,8 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
     #COMMAND_WIDGET_CLASS = SlashOnlyTextCommandBoxTraditional
     COMMAND_WIDGET_CLASS = TextCommandBoxToggled
     #MAIN_WIDGET_CLASS = BoxContainer
-    MAIN_WIDGET_CLASS = GridContainer
+    #MAIN_WIDGET_CLASS = GridContainer
+    MAIN_WIDGET_CLASS = SmartContainer
     FIX_MINIMUM_SIZE_WHEN_CREATED = False
 
     def __init__(self, *args, **kwargs):
@@ -228,16 +231,19 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         #self.wMain.feed = lambda: ''
         self.wMain.editable = False
         self.wMain.fill_rows_first = False
+        self.wMain.scheme = 'ffdh-bottom'
         #self.wMain.diagnostic = 'X'
         #self.wMain.margin = 2
         for i in range(24):
-            box = self.wMain.add_widget(BoxContainer)
+            h = randint(5, 10)
+            w = randint(10, 20)
+            box = self.wMain.add_widget(BoxContainer, height=h, width=w)
             val = 'Box{0}'.format(i)
             box.add_widget(FixedText, value=val, widget_id=val)
             live = box.add_widget(LiveTextfield, name='Live', value='live')
             live.feed = lambda: strftime("%H:%M:%S")
             self.live_widgets.append(live)
-        #grid = self.wMain.add_widget(GridContainer, rows=4, cols=5, diagnostic='Z')
+        #grid = self.wMain.add_widget(GridContainer, rows=2, cols=2, diagnostic='Z')
 
     #def go_back(self, *args, **kwargs):
         #log.info('going back')

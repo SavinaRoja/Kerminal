@@ -18,13 +18,11 @@ class GridContainer(BaseContainer):
                  rows=6,
                  cols=4,
                  fill_rows_first=True,
-                 diagnostic=False,
                  *args,
                  **kwargs):
         self.rows = rows
         self.cols = cols
         self.fill_rows_first = fill_rows_first
-        self.diagnostic = diagnostic
 
         super(GridContainer, self).__init__(screen, *args, **kwargs)
 
@@ -88,27 +86,6 @@ class GridContainer(BaseContainer):
                     widget.max_height, widget.max_width = height, width
                     widget.height, widget.width = height, width
 
-        #The old code for this, commented prior to later removal
-        #Set rely along row slices
-        #rely_start = self.rely + self.top_margin
-        #rely_stop = self.rely + self.height - self.bottom_margin
-        #relys = apportion(rely_start, rely_stop, self.rows)
-        #for row_n, rely in enumerate(relys):
-            #for cell in [col[row_n] for col in self.grid]:
-                #if cell is not None:
-                    #cell.rely = rely
-
-        ##Set relx along col slices
-        #relx_start = self.relx + self.left_margin
-        #relx_stop = self.relx + self.width - self.right_margin
-        #relxs = apportion(relx_start, relx_stop, self.cols)
-        #for col_n, relx in enumerate(relxs):
-            #for cell in self.grid[col_n]:
-                #if cell is not None:
-                    #cell.relx = relx
-        #for each in self.contained:
-            #each.resize()
-
     def initiate_grid(self):
         """
         Initiates the data structures for the grid and grid coordinates
@@ -124,7 +101,6 @@ class GridContainer(BaseContainer):
         self.update_grid()
 
     def update_grid(self):
-
         if self.fill_rows_first:
             flat_index = lambda i, j: i + j * self.cols
         else:
@@ -139,15 +115,15 @@ class GridContainer(BaseContainer):
                 else:
                     self.grid[i][j] = item
 
-    def update(self, clear=True):
-        super(GridContainer, self).update(clear)
+    #def update(self, clear=True):
+        #super(GridContainer, self).update(clear)
 
-        for contained in self.contained:
-            contained.update()
+        #for contained in self.contained:
+            #contained.update()
 
-        if self.diagnostic:
-            for col_n in range(self.cols):
-                for row_n in range(self.rows):
-                    y, x = self.grid_coords[col_n][row_n]
-                    self.parent.curses_pad.addch(y, x, self.diagnostic)
+        #if self.diagnostic:
+            #for col_n in range(self.cols):
+                #for row_n in range(self.rows):
+                    #y, x = self.grid_coords[col_n][row_n]
+                    #self.parent.curses_pad.addch(y, x, self.diagnostic)
 
