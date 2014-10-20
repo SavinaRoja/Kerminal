@@ -150,9 +150,12 @@ class BaseContainer(Widget):
         """
         A Container does not have a meaningful value, so a feed method for a
         Container does not behave like a feed method for a LiveWidget. Instead,
-        the feed method of a
+        the feed method of a container must call the feed methods for each
+        contained Widget or Container that has a feed method.
         """
-        pass
+        for widget in self.contained:
+            if hasattr(widget, 'feed'):
+                widget.feed()
 
     @property
     def margin(self):
