@@ -28,11 +28,6 @@ class GridContainer(BaseContainer):
 
         self.initiate_grid()
 
-    #This is one approach to controlling whether addition of new widgets to a
-    #container is allowed. One concern I have is whether it will be ideal or
-    #sufficient in cases where one will want to determine validity of addition
-    #based on the required/requested size of the new widget. AFAIK, the new
-    #widget will need to be instantiated prior to calculating the size
     def add_widget(self, widget_class, widget_id=None, *args, **kwargs):
         if len(self.contained) >= self.rows * self.cols:
             return False
@@ -114,16 +109,3 @@ class GridContainer(BaseContainer):
                     pass
                 else:
                     self.grid[i][j] = item
-
-    #def update(self, clear=True):
-        #super(GridContainer, self).update(clear)
-
-        #for contained in self.contained:
-            #contained.update()
-
-        #if self.diagnostic:
-            #for col_n in range(self.cols):
-                #for row_n in range(self.rows):
-                    #y, x = self.grid_coords[col_n][row_n]
-                    #self.parent.curses_pad.addch(y, x, self.diagnostic)
-
