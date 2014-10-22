@@ -31,6 +31,15 @@ class BaseContainer(Widget):
                  *args,
                  **kwargs):
 
+        self._max_height = 0
+        self._max_width = 0
+        self._height = 0
+        self._width = 0
+
+        super(BaseContainer, self).__init__(screen,
+                                            *args,
+                                            **kwargs)
+
         self.contained = []  # Holds Widgets and Containers
         self.contained_map = {}
 
@@ -41,10 +50,6 @@ class BaseContainer(Widget):
         self.bottom_margin = bottom_margin
         self.left_margin = left_margin
         self.right_margin = right_margin
-
-        super(BaseContainer, self).__init__(screen,
-                                            *args,
-                                            **kwargs)
 
     def add_widget(self, widget_class, widget_id=None, *args, **kwargs):
         """
@@ -138,7 +143,10 @@ class BaseContainer(Widget):
     def _resize(self):
         """
         It is the job of `_resize` to appropriately modify the `rely` and `relx`
-        attributes of each item in `self.contained`.
+        attributes of each item in `self.contained`. It should also modify the
+        `max_height` and `max_width` attributes as appropriate. Rarely, if ever,
+        should this method directly set the `height` and `width` attributes of
+        its contained Widgets and Containers directly.
 
         This is the method you should probably be modifying if you are making a
         new Container subclass.
@@ -169,6 +177,74 @@ class BaseContainer(Widget):
                 for row_n in range(self.rows):
                     y, x = self.grid_coords[col_n][row_n]
                     self.parent.curses_pad.addch(y, x, self.diagnostic)
+
+    #These protocols for max_height and max_width should ideally be a part of
+    #the base Widget definition
+    @property
+    def max_height(self):
+        return self._max_height
+
+    @max_height.setter
+    def max_height(self, val):
+        """
+        max_height should never be allowed to extend past the available screen
+        area.
+        """
+        max_h = self.parent.curses_pad.getmaxyx()[0] - self.rely - 1
+        if val > max_h:
+            val = max_h
+        self._max_height = val
+        #if self.height > self._max_height:
+            #self.height = self._max_height
+
+    @property
+    def max_width(self):
+        return self._max_width
+
+    @max_width.setter
+    def max_width(self, val):
+        """
+        max_width should never be allowed to extend past the available screen
+        area.
+        """
+        max_w = self.parent.curses_pad.getmaxyx()[1] - self.relx -1
+        if val > max_w:
+            val = max_w
+        self._max_width = val
+        #if self._max_width > self.width:
+            #self.width = self._max_width
+
+    @property
+    def height(self):
+        """
+        Returns the smallest of [self._height, self._max_height].
+        """
+        if self._height > self.max_height:
+            return self.max_height
+        else:
+            return self._height
+
+    @height.setter
+    def height(self, val):
+        if val > self._max_height:
+            val = self._max_height
+        self._height = val
+
+    @property
+    def width(self):
+        """
+        Returns the smallest of [self._width, self._max_width]
+        """
+        if self._width > self.max_width:
+            return self.max_width
+        else:
+            return self._width
+
+    @width.setter
+    def width(self, val):
+        if val > self._max_width:
+            val = self._max_width
+            self._width = val
 
     @property
     def margin(self):
