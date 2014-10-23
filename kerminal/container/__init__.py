@@ -76,7 +76,8 @@ class BaseContainer(Widget):
 
         widget_proxy = weakref.proxy(widget)
 
-        self.contained.append(widget_proxy)
+        #self.contained.append(widget_proxy)
+        self.contained.append(widget)
 
         #I considered putting this in a try statement to catch TypeError on
         #unhashable values of widget_id, but I think it's better to choke on it

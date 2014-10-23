@@ -59,7 +59,7 @@ class GridContainer(BaseContainer):
 
         #Define the start and stop locations
         rely_start = self.rely + self.top_margin
-        rely_stop = self.rely + self.height - self.bottom_margin - 1
+        rely_stop = self.rely + self.height - self.bottom_margin
         relx_start = self.relx + self.left_margin
         relx_stop = self.relx + self.width - self.right_margin
         #Asymmetry between width and height?
@@ -78,7 +78,7 @@ class GridContainer(BaseContainer):
                         height = relys[row_n + 1] - y
                     except IndexError:
                         #height = self.space_available()[0] - y - self.bottom_margin - 2
-                        height = self.max_height - y - self.bottom_margin - 2
+                        height = self.max_height - y - self.bottom_margin
                     try:
                         width = relxs[col_n + 1] - x
                     except IndexError:

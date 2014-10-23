@@ -151,20 +151,20 @@ class BoxContainer(BaseContainer):
         custom_addch(self.rely + self.height - 1, self.relx + self.width - 1,
                      curses.ACS_LRCORNER)
 
-        if self.editing:
-            if self.header_widget is not None:
-                self.header_widget.show_bold = True
-                self.header_widget.color = 'LABELBOLD'
-            if self.footer_widget is not None:
-                self.footer_widget.show_bold = True
-                self.footer_widget.color = 'LABELBOLD'
-        else:
-            if self.header_widget is not None:
-                self.header_widget.show_bold = False
-                self.header_widget.color = self.header_color
-            if self.footer_widget is not None:
-                self.footer_widget.show_bold = False
-                self.footer_widget.color = self.footer_color
+        #if self.editing:
+            #if self.header_widget is not None:
+                #self.header_widget.show_bold = True
+                #self.header_widget.color = 'LABELBOLD'
+            #if self.footer_widget is not None:
+                #self.footer_widget.show_bold = True
+                #self.footer_widget.color = 'LABELBOLD'
+        #else:
+            #if self.header_widget is not None:
+                #self.header_widget.show_bold = False
+                #self.header_widget.color = self.header_color
+            #if self.footer_widget is not None:
+                #self.footer_widget.show_bold = False
+                #self.footer_widget.color = self.footer_color
 
         if self.header_widget is not None:
             self.header_widget.update()
