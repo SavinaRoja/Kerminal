@@ -45,13 +45,25 @@ class BaseContainer(Widget):
 
         self.diagnostic = diagnostic
 
-        self.margin = margin
-        self.top_margin = top_margin
-        self.bottom_margin = bottom_margin
-        self.left_margin = left_margin
-        self.right_margin = right_margin
+        #self.margin = margin
+        #self.top_margin = top_margin
+        #self.bottom_margin = bottom_margin
+        #self.left_margin = left_margin
+        #self.right_margin = right_margin
 
-    def add_widget(self, widget_class, widget_id=None, *args, **kwargs):
+        self.margin = margin
+        self.top_margin = 0
+        self.bottom_margin = 0
+        self.left_margin = 0
+        self.right_margin = 0
+
+    def add_widget(self,
+                   widget_class,
+                   widget_id=None,
+                   rely=None,
+                   relx=None,
+                   *args,
+                   **kwargs):
         """
         Add a Widget or Container (which is just another sort of Widget) to the
         Container. This will create an instance of `widget_class` along with
@@ -68,9 +80,15 @@ class BaseContainer(Widget):
         #inherited from the parent Container unless overridden. I suppose this
         #was the impetus for _passon in some npyscreen library classes
 
+        if rely is None:
+            rely = self.rely + self.top_margin
+
+        if relx is None:
+            relx = self.relx + self.left_margin
+
         widget = widget_class(self.parent,
-                              relx=self.relx + self.left_margin,
-                              rely=self.rely + self.top_margin,
+                              relx=relx,
+                              rely=rely,
                               *args,
                               **kwargs)
 
@@ -198,8 +216,8 @@ class BaseContainer(Widget):
         if val > max_h:
             val = max_h
         self._max_height = val
-        #if self.height > self._max_height:
-            #self.height = self._max_height
+        if self.height > self._max_height:
+            self.height = self._max_height
 
     @property
     def max_width(self):
@@ -217,8 +235,8 @@ class BaseContainer(Widget):
         if val > max_w:
             val = max_w
         self._max_width = val
-        #if self._max_width > self.width:
-            #self.width = self._max_width
+        if self._max_width > self.width:
+            self.width = self._max_width
 
     @property
     def height(self):
@@ -232,8 +250,8 @@ class BaseContainer(Widget):
 
     @height.setter
     def height(self, val):
-        if val > self._max_height:
-            val = self._max_height
+        #if val > self._max_height:
+            #val = self._max_height
         self._height = val
 
     @property
@@ -248,8 +266,8 @@ class BaseContainer(Widget):
 
     @width.setter
     def width(self, val):
-        if val > self._max_width:
-            val = self._max_width
+        #if val > self._max_width:
+            #val = self._max_width
         self._width = val
 
     @property

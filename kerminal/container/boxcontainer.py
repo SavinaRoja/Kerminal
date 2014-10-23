@@ -5,7 +5,7 @@
 
 import curses
 import sys
-from npyscreen import TitleText, Textfield
+from npyscreen import Textfield
 
 from . import BaseContainer
 
@@ -66,6 +66,7 @@ class BoxContainer(BaseContainer):
                            'center': lambda x: (self.width - len(x)) // 2,
                            'right': lambda x: (self.width - len(x)) - 1}
         if self.header:
+            header_text = self.header
             if len(self.header) > (max_text_length):
                 header_text = 'TOO LONG!'[:max_text_length]
             else:
@@ -107,9 +108,8 @@ class BoxContainer(BaseContainer):
 
         for i, widget in enumerate(self.contained):
             widget.relx = self.relx + self.left_margin
-            widget.max_width = self.width - (self.right_margin + self.left_margin)
             widget.rely = self.rely + self.top_margin + i
-            #widget.resize()
+            widget.max_width = self.width - (self.right_margin + self.left_margin)
 
     def update(self, clear=True):
         super(BoxContainer, self).update(clear)
@@ -171,6 +171,7 @@ class BoxContainer(BaseContainer):
         if self.footer_widget is not None:
             self.footer_widget.update()
 
-    def calculate_area_needed(self):
-        return self.height, self.width
-        #return 0, 0
+    #def calculate_area_needed(self):
+        #return self.height, self.width
+        ##return 0, 0
+#

@@ -30,10 +30,24 @@ class GridContainer(BaseContainer):
         self.initiate_grid()
 
     def add_widget(self, widget_class, widget_id=None, *args, **kwargs):
+
+        #prevent the addition of more widgets than the grid can hold
         if len(self.contained) >= self.rows * self.cols:
             return False
+
+        #Instantiate the widget with current position and dimensions
+        col, row = self.convert_flat_index_to_grid(len(self.contained))
+        rely, relx = self.grid_coords[col][row]
+        max_height, max_width = self.grid_dim_hw[col][row]
+
         widget = super(GridContainer, self).add_widget(widget_class,
                                                        widget_id=widget_id,
+                                                       rely=rely,
+                                                       relx=relx,
+                                                       max_height=max_height,
+                                                       max_width=max_width,
+                                                       height=6,
+                                                       width=26,
                                                        *args,
                                                        **kwargs)
         self.update_grid()
@@ -44,12 +58,58 @@ class GridContainer(BaseContainer):
                                                  widget_id=widget_id)
         self.update_grid()
 
-    def _resize(self):
+    def get_next_yx(self):
+        """
+        Returns the y-x coordinates of the next available Widget/Container slot.
+        """
+        col, row = self.convert_flat_index_to_grid(len(self.contained))
+        return self.grid_coords[col][row]
 
+    def convert_flat_index_to_grid(self, index):
+        if self.fill_rows_first:
+            row = index // self.cols
+            col = index % self.cols
+        else:
+            row = index % self.cols
+            col = index // self.cols
+        return col, row
+
+    def convert_grid_indices_to_flat(self, col_index, row_index):
+        if self.fill_rows_first:
+            return col_index + row_index * self.cols
+        else:
+            return col_index * self.rows + row_index
+
+    def _resize(self):
         #GridContainer expands to fill its entire allocated space
         self.height = self.max_height
         self.width = self.max_width
 
+        self.resize_grid_coords()
+
+        #GridContainer sets rely-relx and sets max height and width
+        for index, widget in enumerate(self.contained):
+            col, row = self.convert_flat_index_to_grid(index)
+            widget.rely, widget.relx = self.grid_coords[col][row]
+            widget.max_height, widget.max_width = self.grid_dim_hw[col][row]
+
+    def initiate_grid(self):
+        """
+        Initiates the data structures for the grid and grid coordinates
+        """
+
+        self.grid = []
+        self.grid_coords = []
+        self.grid_dim_hw = []
+
+        for i in range(self.cols):
+            self.grid.append([None] * self.rows)
+            self.grid_coords.append([[0, 0], ] * self.rows)
+            self.grid_dim_hw.append([[0, 0], ] * self.rows)
+
+        self.update_grid()
+
+    def resize_grid_coords(self):
         def apportion(start, stop, n):
             locs = []
             cell_size = (stop - start + 1) / n
@@ -62,57 +122,37 @@ class GridContainer(BaseContainer):
         rely_stop = self.rely + self.height - self.bottom_margin
         relx_start = self.relx + self.left_margin
         relx_stop = self.relx + self.width - self.right_margin
-        #Asymmetry between width and height?
 
         relys = apportion(rely_start, rely_stop, self.rows)
         relxs = apportion(relx_start, relx_stop, self.cols)
 
-        for col_n in range(self.cols):
-            for row_n in range(self.rows):
-                y, x = relys[row_n], relxs[col_n]
+        for col in range(self.cols):
+            for row in range(self.rows):
+                y, x = relys[row], relxs[col]
                 #Set the grid coords matrix
-                self.grid_coords[col_n][row_n] = [y, x]
-                widget = self.grid[col_n][row_n]
-                if widget is not None:
-                    try:
-                        height = relys[row_n + 1] - y
-                    except IndexError:
-                        #height = self.space_available()[0] - y - self.bottom_margin - 2
-                        height = self.max_height - y - self.bottom_margin
-                    try:
-                        width = relxs[col_n + 1] - x
-                    except IndexError:
-                        #width = self.space_available()[1] - x - self.right_margin
-                        width = self.max_width - x - self.right_margin
-                        #Asymmetry between width and height?
-                    widget.rely, widget.relx = relys[row_n], relxs[col_n]
-                    widget.max_height, widget.max_width = height, width
-                    #widget.height, widget.width = height, width
+                self.grid_coords[col][row] = [y, x]
 
-    def initiate_grid(self):
-        """
-        Initiates the data structures for the grid and grid coordinates
-        """
+        for col in range(self.cols):
+            for row in range(self.rows):
+                if row == (self.rows - 1):  # Last row
+                    height = (self.rely + self.max_height) - self.grid_coords[col][row][0]
+                else:
+                    height = self.grid_coords[col][row + 1][0] - self.grid_coords[col][row][0]
 
-        self.grid = []
-        self.grid_coords = []
+                if col == (self.cols - 1):  # Final column
+                    width = (self.relx + self.max_width) - self.grid_coords[col][row][1]
+                else:
+                    width = self.grid_coords[col + 1][row][1] - self.grid_coords[col][row][1]
 
-        for i in range(self.cols):
-            self.grid.append([None] * self.rows)
-            self.grid_coords.append([[0, 0], ] * self.rows)
-
-        self.update_grid()
+                self.grid_dim_hw[col][row] = [height, width]
 
     def update_grid(self):
-        if self.fill_rows_first:
-            flat_index = lambda i, j: i + j * self.cols
-        else:
-            flat_index = lambda i, j: i * self.rows + j
-
+        #This puts the contained items into a grid for col-row accession
         for i in range(self.cols):
             for j in range(self.rows):
+                flat_index = self.convert_grid_indices_to_flat(i, j)
                 try:
-                    item = self.contained[flat_index(i, j)]
+                    item = self.contained[flat_index]
                 except IndexError:
                     pass
                 else:

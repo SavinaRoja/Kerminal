@@ -230,7 +230,7 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         self.previous_widget = self.wMain
         #self.wMain.feed = lambda: ''
         self.wMain.editable = False
-        self.wMain.fill_rows_first = False
+        self.wMain.fill_rows_first = True
         #self.wMain.max_height = 20
         #self.wMain.max_width = 30
         #self.wMain.height = 10
