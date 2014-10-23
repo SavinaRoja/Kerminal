@@ -35,8 +35,14 @@ class BoxContainer(BaseContainer):
                  *args,
                  **kwargs):
 
+        super(BoxContainer, self).__init__(screen,
+                                           margin=self.__class__.BORDER_MARGIN,
+                                           *args,
+                                           **kwargs)
+
         self.height = height
         self.width = width
+
         #self.header = header
         self.header = 'HEADER'
         #self.footer = footer
@@ -51,12 +57,7 @@ class BoxContainer(BaseContainer):
             self.footer_justify = 'left'
         self.header_color = header_color
         self.footer_color = footer_color
-        super(BoxContainer, self).__init__(screen,
-                                           margin=self.__class__.BORDER_MARGIN,
-                                           #height=6,
-                                           #width=26,
-                                           *args,
-                                           **kwargs)
+
         self.make_header_and_footer()
 
     def make_header_and_footer(self):
@@ -73,7 +74,8 @@ class BoxContainer(BaseContainer):
             self.header_widget = Textfield(self.parent,
                                            relx=self.relx + x_offset,
                                            rely=self.rely,
-                                           width=len(header_text) + 1,
+                                           max_width=len(header_text) + 1,
+                                           #width=len(header_text) + 1,
                                            value=header_text,
                                            color=self.header_color)
         else:
@@ -87,22 +89,27 @@ class BoxContainer(BaseContainer):
             self.footer_widget = Textfield(self.parent,
                                            relx=self.relx + x_offset,
                                            rely=self.rely + self.height - 1,
-                                           width=len(footer_text) + 1,
+                                           max_width=len(footer_text) + 1,
                                            value=footer_text,
                                            color=self.footer_color)
         else:
             self.footer_widget = None
 
     def _resize(self):
+        self.height = self.max_height
+        self.width = self.max_width
+
         self.header_widget.relx = self.relx + 1
-        self.footer_widget.relx = self.relx + 1
         self.header_widget.rely = self.rely
+
+        self.footer_widget.relx = self.relx + 1
         self.footer_widget.rely = self.rely + self.height - 1
+
         for i, widget in enumerate(self.contained):
             widget.relx = self.relx + self.left_margin
-            widget.width = self.width - (self.right_margin + self.left_margin)
+            widget.max_width = self.width - (self.right_margin + self.left_margin)
             widget.rely = self.rely + self.top_margin + i
-            widget.resize()
+            #widget.resize()
 
     def update(self, clear=True):
         super(BoxContainer, self).update(clear)

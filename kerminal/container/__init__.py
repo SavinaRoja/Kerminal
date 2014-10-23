@@ -68,20 +68,21 @@ class BaseContainer(Widget):
         #inherited from the parent Container unless overridden. I suppose this
         #was the impetus for _passon in some npyscreen library classes
 
-        #num_contained = len(self.contained)
         widget = widget_class(self.parent,
                               relx=self.relx + self.left_margin,
                               rely=self.rely + self.top_margin,
                               *args,
                               **kwargs)
-        self.contained.append(widget)
+
+        widget_proxy = weakref.proxy(widget)
+
+        self.contained.append(widget_proxy)
 
         #I considered putting this in a try statement to catch TypeError on
         #unhashable values of widget_id, but I think it's better to choke on it
         if widget_id is not None:
-            self.contained_map[widget_id] = widget
+            self.contained_map[widget_id] = widget_proxy
 
-        widget_proxy = weakref.proxy(widget)
         return widget_proxy
 
     def remove_widget(self, widget=None, widget_id=None):
@@ -172,11 +173,11 @@ class BaseContainer(Widget):
         for contained in self.contained:
             contained.update()
 
-        if self.diagnostic:
-            for col_n in range(self.cols):
-                for row_n in range(self.rows):
-                    y, x = self.grid_coords[col_n][row_n]
-                    self.parent.curses_pad.addch(y, x, self.diagnostic)
+        #if self.diagnostic:
+            #for col_n in range(self.cols):
+                #for row_n in range(self.rows):
+                    #y, x = self.grid_coords[col_n][row_n]
+                    #self.parent.curses_pad.addch(y, x, self.diagnostic)
 
     #These protocols for max_height and max_width should ideally be a part of
     #the base Widget definition
@@ -190,6 +191,8 @@ class BaseContainer(Widget):
         max_height should never be allowed to extend past the available screen
         area.
         """
+        if val is False:
+            val = 0
         max_h = self.parent.curses_pad.getmaxyx()[0] - self.rely - 1
         if val > max_h:
             val = max_h
@@ -207,6 +210,8 @@ class BaseContainer(Widget):
         max_width should never be allowed to extend past the available screen
         area.
         """
+        if val is False:
+            val = 0
         max_w = self.parent.curses_pad.getmaxyx()[1] - self.relx -1
         if val > max_w:
             val = max_w
@@ -244,7 +249,7 @@ class BaseContainer(Widget):
     def width(self, val):
         if val > self._max_width:
             val = self._max_width
-            self._width = val
+        self._width = val
 
     @property
     def margin(self):

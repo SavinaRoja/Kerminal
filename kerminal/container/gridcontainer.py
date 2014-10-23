@@ -20,11 +20,12 @@ class GridContainer(BaseContainer):
                  fill_rows_first=True,
                  *args,
                  **kwargs):
+
+        super(GridContainer, self).__init__(screen, *args, **kwargs)
+
         self.rows = rows
         self.cols = cols
         self.fill_rows_first = fill_rows_first
-
-        super(GridContainer, self).__init__(screen, *args, **kwargs)
 
         self.initiate_grid()
 
@@ -44,6 +45,11 @@ class GridContainer(BaseContainer):
         self.update_grid()
 
     def _resize(self):
+
+        #GridContainer expands to fill its entire allocated space
+        self.height = self.max_height
+        self.width = self.max_width
+
         def apportion(start, stop, n):
             locs = []
             cell_size = (stop - start + 1) / n
@@ -71,15 +77,17 @@ class GridContainer(BaseContainer):
                     try:
                         height = relys[row_n + 1] - y
                     except IndexError:
-                        height = self.space_available()[0] - y - self.bottom_margin - 2
+                        #height = self.space_available()[0] - y - self.bottom_margin - 2
+                        height = self.max_height - y - self.bottom_margin - 2
                     try:
                         width = relxs[col_n + 1] - x
                     except IndexError:
-                        width = self.space_available()[1] - x - self.right_margin
+                        #width = self.space_available()[1] - x - self.right_margin
+                        width = self.max_width - x - self.right_margin
                         #Asymmetry between width and height?
                     widget.rely, widget.relx = relys[row_n], relxs[col_n]
                     widget.max_height, widget.max_width = height, width
-                    widget.height, widget.width = height, width
+                    #widget.height, widget.width = height, width
 
     def initiate_grid(self):
         """

@@ -169,7 +169,7 @@ class FormMuttActiveTraditionalWithInfo(FormMuttActiveTraditional):
             self.wMain    = self.add(self.__class__.MAIN_WIDGET_CLASS,
                                      rely=self.__class__.MAIN_WIDGET_CLASS_START_LINE,
                                      relx=0,
-                                     max_height=-3,
+                                     max_height=False,
                                      )
         self.wStatus2 = self.add(self.__class__.STATUS_WIDGET_CLASS,  rely=MAXY-2-self.BLANK_LINES_BASE,
                                         relx=self.__class__.STATUS_WIDGET_X_OFFSET,
@@ -217,9 +217,9 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
     ACTION_CONTROLLER = KerminalCommands
     #COMMAND_WIDGET_CLASS = SlashOnlyTextCommandBoxTraditional
     COMMAND_WIDGET_CLASS = TextCommandBoxToggled
-    #MAIN_WIDGET_CLASS = BoxContainer
+    MAIN_WIDGET_CLASS = BoxContainer
     #MAIN_WIDGET_CLASS = GridContainer
-    MAIN_WIDGET_CLASS = SmartContainer
+    #MAIN_WIDGET_CLASS = SmartContainer
     FIX_MINIMUM_SIZE_WHEN_CREATED = False
 
     def __init__(self, *args, **kwargs):
@@ -231,27 +231,32 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         #self.wMain.feed = lambda: ''
         self.wMain.editable = False
         self.wMain.fill_rows_first = False
-        #self.wMain.diagnostic = 'X'
+        #self.wMain.max_height = 20
+        #self.wMain.max_width = 30
+        #self.wMain.height = 10
+        #self.wMain.width = 20
+        self.wMain.diagnostic = 'X'
         #self.wMain.margin = 2
-        for i in range(20):
-            h = randint(4, 12)
-            w = randint(10, 20)
-            box = self.wMain.add_widget(BoxContainer, height=h, width=w)
-            val = 'Box{0}'.format(i)
-            box.add_widget(FixedText, value=val, widget_id=val)
-            live = box.add_widget(LiveTextfield, name='Live', value='live')
-            live.feed = lambda: strftime("%H:%M:%S")
-            self.live_widgets.append(live)
-        sc = self.wMain.add_widget(SmartContainer, height=25, width=70, scheme='ffdh-bottom')
-        for i in range(15):
-            h = randint(4, 10)
-            w = randint(10, 15)
-            box = sc.add_widget(BoxContainer, height=h, width=w)
-            val = 'Box{0}'.format(i)
-            box.add_widget(FixedText, value=val, widget_id=val)
-            live = box.add_widget(LiveTextfield, name='Live', value='live')
-            live.feed = lambda: strftime("%H:%M:%S")
-            self.live_widgets.append(live)
+        #for i in range(1):
+            ##h = randint(4, 12)
+            ##w = randint(10, 20)
+            #box = self.wMain.add_widget(BoxContainer)
+            #val = 'Box{0}'.format(i)
+            #box.add_widget(FixedText, value=val, widget_id=val)
+            #box.add_widget(FixedText, value=val, widget_id=val)
+            #live = box.add_widget(LiveTextfield, name='Live', value='live')
+            #live.feed = lambda: strftime("%H:%M:%S")
+            #self.live_widgets.append(live)
+        #sc = self.wMain.add_widget(SmartContainer, height=25, width=70, scheme='ffdh-bottom')
+        #for i in range(15):
+            #h = randint(4, 10)
+            #w = randint(10, 15)
+            #box = sc.add_widget(BoxContainer, height=h, width=w)
+            #val = 'Box{0}'.format(i)
+            #box.add_widget(FixedText, value=val, widget_id=val)
+            #live = box.add_widget(LiveTextfield, name='Live', value='live')
+            #live.feed = lambda: strftime("%H:%M:%S")
+            #self.live_widgets.append(live)
         #grid = self.wMain.add_widget(GridContainer, rows=2, cols=2, diagnostic='Z')
 
     def go_back(self, *args, **kwargs):
@@ -271,8 +276,8 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
 
         self.wInfo.rely = self.lines - 3 - self.BLANK_LINES_BASE
         self.wStatus2.rely = self.lines - 2 - self.BLANK_LINES_BASE
-        self.wMain.height = self.lines - 4 - self.BLANK_LINES_BASE
-        self.wMain.width = self.columns
+        self.wMain.max_height = self.lines - 4 - self.BLANK_LINES_BASE
+        self.wMain.max_width = self.columns
         self.wMain.resize()
         self.wInfo.resize()
         self.wStatus1.resize()
