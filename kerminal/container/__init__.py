@@ -199,6 +199,9 @@ class BaseContainer(Widget):
 
         self._update()
 
+        if self.diagnostic:
+            self.parent.curses_pad.addch(self.rely, self.relx, self.diagnostic)
+
         for contained in self.contained:
             contained.update(clear=clear)
 

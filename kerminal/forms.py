@@ -218,8 +218,8 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
     #COMMAND_WIDGET_CLASS = SlashOnlyTextCommandBoxTraditional
     COMMAND_WIDGET_CLASS = TextCommandBoxToggled
     #MAIN_WIDGET_CLASS = BoxContainer
-    MAIN_WIDGET_CLASS = GridContainer
-    #MAIN_WIDGET_CLASS = SmartContainer
+    #MAIN_WIDGET_CLASS = GridContainer
+    MAIN_WIDGET_CLASS = SmartContainer
     FIX_MINIMUM_SIZE_WHEN_CREATED = False
 
     def __init__(self, *args, **kwargs):
@@ -235,14 +235,18 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         #self.wMain.max_width = 30
         #self.wMain.height = 10
         #self.wMain.width = 20
-        self.wMain.diagnostic = 'X'
-        self.wMain.margin = 2
+        #self.wMain.diagnostic = 'X'
+        self.wMain.margin = 0
+        self.wMain.scheme = 'ffdh-top'
+
         #self.wMain.add_widget(FixedText, value='Box', widget_id='Box')
 
-        for i in range(24):
-            box = self.wMain.add_widget(BoxContainer)
+        for i in range(10):
+            h = randint(4, 10)
+            w = randint(10, 15)
+            box = self.wMain.add_widget(BoxContainer, height=h, width=w, inflate=False)
             val = 'Box{0}'.format(i)
-            box.add_widget(FixedText, value=val, widget_id=val)
+            box.add_widget(FixedText, value=val, widget_id=val, diagnostic='X')
             live = box.add_widget(LiveTextfield, name='Live', value='live')
             live.feed = lambda: strftime("%H:%M:%S")
             self.live_widgets.append(live)

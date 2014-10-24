@@ -45,24 +45,36 @@ class SmartContainer(BaseContainer):
         return w
 
     def _resize(self):
+        self.height = self.max_height
+        self.width = self.max_width
+
+        for widget in self.contained:
+            widget.max_width = self.max_width - (self.left_margin + self.right_margin)
+            widget.max_height = self.max_height - (self.top_margin + self.bottom_margin)
+
         self.scheme_map[self.scheme]()
 
     def ffdh_top(self):
         #Re-ordering self.contained by descending height
         self.contained.sort(key=lambda widget: widget.height, reverse=True)
+        start_y = self.rely + self.top_margin
+        end_y = self.rely + self.height - self.bottom_margin
+        start_x = self.relx + self.left_margin
+        end_x = self.relx + self.width - self.right_margin
+        width = end_x - start_x
 
-        levels = [self.rely]
-        level_x = {self.rely: 0}
+        levels = [start_y]
+        level_x = {start_y: 0}
 
         for widget in self.contained:
             for level in levels:
-                if level >= self.height:
+                if level >= end_y:
                     widget.hidden = True  # this aint what I think it is
                     break
                 x_cur = level_x[level]
-                if widget.width <= self.width - x_cur:
+                if widget.width <= width - x_cur:
                     widget.rely = level
-                    widget.relx = x_cur
+                    widget.relx = x_cur + start_x
                     if x_cur == 0:
                         new_level = level + widget.height
                         levels.append(new_level)
@@ -93,19 +105,6 @@ class SmartContainer(BaseContainer):
                     level_x[level] += widget.width
                     break
 
-
-    #def update(self, clear=True):
-        #super(SmartContainer, self).update(clear)
-
-        #for contained in self.contained:
-            #contained.update()
-
-        #if self.diagnostic:
-            #for col_n in range(self.cols):
-                #for row_n in range(self.rows):
-                    #y, x = self.grid_coords[col_n][row_n]
-                    #self.parent.curses_pad.addch(y, x, self.diagnostic)
-
     @property
     def scheme(self):
         return self._scheme
@@ -115,4 +114,4 @@ class SmartContainer(BaseContainer):
         if val.lower() in self.scheme_map.keys():
             self._scheme = val
         else:
-            pass
+            raise ValueError('{0} not in {1}'.format(val, self.scheme_map.keys()))

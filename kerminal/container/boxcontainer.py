@@ -32,6 +32,7 @@ class BoxContainer(BaseContainer):
                  footer_justify='left',  # str, one of (left, center, right)
                  header_color='LABEL',
                  footer_color='LABEL',
+                 inflate=True,
                  *args,
                  **kwargs):
 
@@ -42,6 +43,7 @@ class BoxContainer(BaseContainer):
 
         self.height = height
         self.width = width
+        self.inflate = inflate
 
         #self.header = header
         self.header = 'HEADER'
@@ -59,6 +61,29 @@ class BoxContainer(BaseContainer):
         self.footer_color = footer_color
 
         self.make_header_and_footer()
+
+    #def add_widget(self, widget_class, widget_id=None, *args, **kwargs):
+        ##prevent the addition of more widgets than the grid can hold
+        #if len(self.contained) >= self.rows * self.cols:
+            #return False
+
+        ##Instantiate the widget with current position and dimensions
+        #col, row = self.convert_flat_index_to_grid(len(self.contained))
+        #rely, relx = self.grid_coords[col][row]
+        #max_height, max_width = self.grid_dim_hw[col][row]
+
+        #widget = super(BoxContainer, self).add_widget(widget_class,
+                                                      #widget_id=widget_id,
+                                                      #rely=rely,
+                                                      #relx=relx,
+                                                      #max_height=max_height,
+                                                      #max_width=max_width,
+                                                      #height=6,
+                                                      #width=26,
+                                                      #*args,
+                                                      #**kwargs)
+        #self.update_grid()
+        #return widget
 
     def make_header_and_footer(self):
         max_text_length = self.width - 3  # Two for the corners, one for blank
@@ -97,8 +122,9 @@ class BoxContainer(BaseContainer):
             self.footer_widget = None
 
     def _resize(self):
-        self.height = self.max_height
-        self.width = self.max_width
+        if self.inflate:
+            self.height = self.max_height
+            self.width = self.max_width
 
         self.header_widget.relx = self.relx + 1
         self.header_widget.rely = self.rely
@@ -111,13 +137,9 @@ class BoxContainer(BaseContainer):
             widget.rely = self.rely + self.top_margin + i
             widget.max_width = self.width - (self.right_margin + self.left_margin)
 
-    def update(self, clear=True):
-        super(BoxContainer, self).update(clear)
-
-        for contained in self.contained:
-            contained.update()
-
+    def _update(self):
         #Time to draw the box; First the bars
+        #pass
         self.parent.curses_pad.hline(self.rely, self.relx + 1,
                                      curses.ACS_HLINE, self.width - 2)
         self.parent.curses_pad.hline(self.rely + self.height - 1, self.relx + 1,
@@ -126,16 +148,6 @@ class BoxContainer(BaseContainer):
                                      curses.ACS_VLINE, self.height - 2)
         self.parent.curses_pad.vline(self.rely + 1, self.relx + self.width - 1,
                                      curses.ACS_VLINE, self.height - 2)
-
-        #Now the corners
-
-        #Note! The following is a workaround to fix a bug in Python 3.4.0;
-        #It should probably be addressed in npyscreen internally
-        #For reference: http://bugs.python.org/issue21088
-        #               https://hg.python.org/cpython/rev/c67a19e11a71
-        #Should be fixed in release candidate 1 of 3.4.1, so I only check for
-        #3.4.0
-        #The bug causes the y,x arguments to be inverted to x,y
 
         def custom_addch(y, x, ch):
             if sys.version_info[:3] == (3, 4, 0):
@@ -150,6 +162,9 @@ class BoxContainer(BaseContainer):
                      curses.ACS_LLCORNER)
         custom_addch(self.rely + self.height - 1, self.relx + self.width - 1,
                      curses.ACS_LRCORNER)
+
+    def update(self, clear=True):
+        super(BoxContainer, self).update(clear=clear)
 
         #if self.editing:
             #if self.header_widget is not None:

@@ -45,8 +45,8 @@ class GridContainer(BaseContainer):
                                                        relx=relx,
                                                        max_height=max_height,
                                                        max_width=max_width,
-                                                       height=6,
-                                                       width=26,
+                                                       #height=6,
+                                                       #width=26,
                                                        *args,
                                                        **kwargs)
         self.update_grid()
