@@ -236,7 +236,9 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         #self.wMain.height = 10
         #self.wMain.width = 20
         self.wMain.diagnostic = 'X'
-        #self.wMain.margin = 2
+        self.wMain.margin = 2
+        #self.wMain.add_widget(FixedText, value='Box', widget_id='Box')
+
         for i in range(24):
             box = self.wMain.add_widget(BoxContainer)
             val = 'Box{0}'.format(i)

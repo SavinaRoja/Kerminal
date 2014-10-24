@@ -45,17 +45,11 @@ class BaseContainer(Widget):
 
         self.diagnostic = diagnostic
 
-        #self.margin = margin
-        #self.top_margin = top_margin
-        #self.bottom_margin = bottom_margin
-        #self.left_margin = left_margin
-        #self.right_margin = right_margin
-
         self.margin = margin
-        self.top_margin = 0
-        self.bottom_margin = 0
-        self.left_margin = 0
-        self.right_margin = 0
+        self.top_margin = top_margin
+        self.bottom_margin = bottom_margin
+        self.left_margin = left_margin
+        self.right_margin = right_margin
 
     def add_widget(self,
                    widget_class,
@@ -188,15 +182,55 @@ class BaseContainer(Widget):
             if hasattr(widget, 'feed'):
                 widget.feed()
 
-    def update(self, clear=True):
-        for contained in self.contained:
-            contained.update()
+    def _update(self):
+        """
+        Modify this method if you wish to add behavior to a Container when it
+        is updated. The clearing of the widget area and the calling of contained
+        items is handled in `update` which calls this method.
+        """
+        pass
 
-        #if self.diagnostic:
-            #for col_n in range(self.cols):
-                #for row_n in range(self.rows):
-                    #y, x = self.grid_coords[col_n][row_n]
-                    #self.parent.curses_pad.addch(y, x, self.diagnostic)
+    def update(self, clear=True):
+        if clear:
+            self.clear()
+
+        if self.hidden:
+            return True
+
+        self._update()
+
+        for contained in self.contained:
+            contained.update(clear=clear)
+
+    def _display(self):
+        """
+        Modify this method if you wish to add behavior to a Container when
+        that container is *explicitly* refreshed with the `display` method.
+        """
+        pass
+
+    #I may need to review the specification for the display function. It shares
+    #qualities with the display methods of both Form and Widget. Widgets do not
+    #seem to ever modify the base display behavior.
+    #It is possible that there needn't even be a display method here under most
+    #circumstances, but I am hesitant to remove it at the moment. Care must be
+    #taken to ensure that only one call to the screen refresh is applied
+    def display(self, clear=True):
+        """
+        Do an update of the Container object and all of its contained items,
+        followed immediately by a refresh of the screen.
+        """
+        if self.hidden:
+            self.clear()
+            self._display()
+            self.parent.refresh()
+        else:
+            self._display()
+            #Update will tunnel to contents without calling the refresh, so the
+            #refresh below will only be called once, at the level of the
+            #container explicity refreshed by the .display method
+            self.update(clear=clear)
+            self.parent.refresh()
 
     #These protocols for max_height and max_width should ideally be a part of
     #the base Widget definition
@@ -216,8 +250,8 @@ class BaseContainer(Widget):
         if val > max_h:
             val = max_h
         self._max_height = val
-        if self.height > self._max_height:
-            self.height = self._max_height
+        #if self.height > self._max_height:
+            #self.height = self._max_height
 
     @property
     def max_width(self):
@@ -235,8 +269,8 @@ class BaseContainer(Widget):
         if val > max_w:
             val = max_w
         self._max_width = val
-        if self._max_width > self.width:
-            self.width = self._max_width
+        #if self._max_width > self.width:
+            #self.width = self._max_width
 
     @property
     def height(self):

@@ -30,7 +30,6 @@ class GridContainer(BaseContainer):
         self.initiate_grid()
 
     def add_widget(self, widget_class, widget_id=None, *args, **kwargs):
-
         #prevent the addition of more widgets than the grid can hold
         if len(self.contained) >= self.rows * self.cols:
             return False
@@ -135,12 +134,14 @@ class GridContainer(BaseContainer):
         for col in range(self.cols):
             for row in range(self.rows):
                 if row == (self.rows - 1):  # Last row
-                    height = (self.rely + self.max_height) - self.grid_coords[col][row][0]
+                    height = (self.rely + self.max_height) -\
+                             (self.grid_coords[col][row][0] + self.bottom_margin)
                 else:
                     height = self.grid_coords[col][row + 1][0] - self.grid_coords[col][row][0]
 
                 if col == (self.cols - 1):  # Final column
-                    width = (self.relx + self.max_width) - self.grid_coords[col][row][1]
+                    width = (self.relx + self.max_width) -\
+                            (self.grid_coords[col][row][1] + self.right_margin)
                 else:
                     width = self.grid_coords[col + 1][row][1] - self.grid_coords[col][row][1]
 
