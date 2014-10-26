@@ -224,32 +224,30 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
 
     def __init__(self, *args, **kwargs):
         super(KerminalForm, self).__init__(*args, **kwargs)
-        #self.wMain.interested_in_mouse_even_when_not_editable = False
+        self.wMain.interested_in_mouse_even_when_not_editable = False
 
         #Allow the recall of previous widget
         self.previous_widget = self.wMain
         #self.wMain.feed = lambda: ''
         self.wMain.editable = False
         self.wMain.fill_rows_first = True
-        #self.wMain.max_height = 20
-        #self.wMain.max_width = 30
-        #self.wMain.height = 10
-        #self.wMain.width = 20
-        #self.wMain.diagnostic = 'X'
         self.wMain.margin = 0
+        #self.wMain.scheme = 'ffdh-bottom'
         self.wMain.scheme = 'ffdh-top'
 
         #self.wMain.add_widget(FixedText, value='Box', widget_id='Box')
 
-        for i in range(10):
-            h = randint(4, 10)
+        for i in range(40):
+            h = randint(5, 12)
             w = randint(10, 15)
-            box = self.wMain.add_widget(BoxContainer, height=h, width=w, inflate=False)
+            box = self.wMain.add_widget(BoxContainer, height=h, width=w, inflate=False, header='header', footer='footer')
             val = 'Box{0}'.format(i)
-            box.add_widget(FixedText, value=val, widget_id=val, diagnostic='X')
+            box.add_widget(FixedText, value=val, widget_id=val)
             live = box.add_widget(LiveTextfield, name='Live', value='live')
             live.feed = lambda: strftime("%H:%M:%S")
             self.live_widgets.append(live)
+
+        self.resize()
         #sc = self.wMain.add_widget(SmartContainer, height=25, width=70, scheme='ffdh-bottom')
         #for i in range(15):
             #h = randint(4, 10)
