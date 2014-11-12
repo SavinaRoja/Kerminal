@@ -4,7 +4,7 @@
 This module represents the Application level for Kerminal
 """
 
-from npyscreen import NPSAppManaged
+import npyscreen2
 
 from . import forms, __version__
 from .communication import CommsThread
@@ -13,7 +13,7 @@ from time import strftime
 
 import logging
 
-log = logging.getLogger('Kerminal.application')
+log = logging.getLogger('npyscreen2.kerminal')
 
 
 def status_line1(thread):
@@ -24,18 +24,146 @@ def status_line1(thread):
     return status
 
 
-class KerminalApp(NPSAppManaged):
-    keypress_timeout_default = 1
+class KerminalApp(npyscreen2.App):
+    def __init__(self):
+        super(KerminalApp, self).__init__(keypress_timeout_default=1)
 
-    def onStart(self):
+    def on_start(self):
         self.stream = CommsThread()
         self.stream.start()
-        self.main_form = self.addForm('MAIN', forms.KerminalForm)
+        self.main_form = self.add_form(KerminalForm, 'MAIN')
+        self.main_form.header.feed = partial(status_line1, self.stream)
 
-        #This gets around the use of a standard form class not having the
-        #add_live method
-        self.main_form.live_widgets.append(self.main_form.wStatus1)
-        self.main_form.live_widgets.append(self.main_form.wStatus2)
-        self.main_form.live_widgets.append(self.main_form.wInfo)
-        self.main_form.wStatus1.feed = partial(status_line1, self.stream)
-        self.main_form.wStatus2.feed = lambda: ' Kerminal Command Line '
+
+class KerminalForm(npyscreen2.Form):
+
+    def __init__(self, *args, **kwargs):
+        super(KerminalForm, self).__init__(*args, **kwargs)
+
+        self.add(npyscreen2.Widget,
+                 widget_id='dummy',
+                 editable=True)
+
+        self.top_bar = self.add(npyscreen2.BorderBox,
+                                widget_id='top_bar',
+                                preserve_instantiation_dimensions=False,
+                                auto_manage=False,
+                                top=True,
+                                bottom=False,
+                                left=False,
+                                right=False,
+                                max_height=self.max_height,
+                                max_width=self.max_width)
+
+        self.bot_bar = self.add(npyscreen2.BorderBox,
+                                widget_id='bottom_bar',
+                                preserve_instantiation_dimensions=False,
+                                auto_manage=False,
+                                top=True,
+                                bottom=False,
+                                left=False,
+                                right=False,
+                                max_height=self.max_height,
+                                max_width=self.max_width)
+
+        self.header = self.add(npyscreen2.TextField,
+                               widget_id='header',
+                               relx=self.relx + 1,
+                               rely=self.rely,
+                               height=1,
+                               auto_manage=False,
+                               editable=False,
+                               value=' Kerminal Header ',
+                               color='LABEL',
+                               bold=True)
+
+        self.cl_header = self.add(npyscreen2.TextField,
+                                  widget_id='cl_header',
+                                  relx=self.relx + 1,
+                                  rely=self.rely,
+                                  height=1,
+                                  auto_manage=False,
+                                  editable=False,
+                                  value=' Kerminal Command Line ',
+                                  color='LABEL',
+                                  bold=True)
+
+        self.command_line = self.add(npyscreen2.TextField,
+                                     widget_id='command_line',
+                                     relx=self.relx,
+                                     rely=self.rely + self.height - 1,
+                                     auto_mange=False,
+                                     editable=True,
+                                     value='Press ESC to enter commands')
+
+        self.status_prefix = self.add(npyscreen2.TextField,
+                                    widget_id='status_prefix',
+                                    relx=self.relx,
+                                    rely=self.rely + self.height - 3,
+                                    auto_manage=True,
+                                    editable=False,
+                                    value='Status:',
+                                    height=1,
+                                    color='CONTROL')
+
+        self.status = self.add(npyscreen2.TextField,
+                             widget_id='status_prefix',
+                             relx=self.relx,
+                             rely=self.rely + self.height - 3,
+                             auto_manage=True,
+                             editable=False,
+                             value='TEXT',
+                             height=1)
+
+    def while_waiting(self):
+        self.header.feed()
+        self.display()
+
+    def info(self, msg):
+        self.status_prefix.value = 'INFO:'
+        self.status.value = msg
+
+    def warning(self, msg):
+        self.status_prefix.value = 'WARNING:'
+        self.status.value = msg
+
+    def error(self, msg):
+        self.status_prefix.value = 'ERROR:'
+        self.status.value = msg
+
+    def critical(self, msg):
+        self.status_prefix.value = 'CRITICAL:'
+        self.status.value = msg
+
+    def resize(self):
+        self.top_bar.multi_set(rely=self.rely,
+                               relx=self.relx,
+                               max_height=self.max_height,
+                               max_width=self.max_width)
+        self.bot_bar.multi_set(rely=self.rely + self.height - 2,
+                               relx=self.relx,
+                               max_height=self.max_height,
+                               max_width=self.max_width)
+        self.header.multi_set(rely=self.rely,
+                              relx=self.relx + 1,
+                              max_width=self.max_width,
+                              max_height=1)
+        self.cl_header.multi_set(rely=self.rely + self.height - 2,
+                                 relx=self.relx + 1,
+                                 max_width=self.max_width,
+                                 max_height=1)
+        self.command_line.multi_set(rely=self.rely + self.height - 1,
+                                    relx=self.relx,
+                                    max_height=1,
+                                    max_width=self.max_width)
+        self.status_prefix.multi_set(rely=self.rely + self.height - 3,
+                                     relx=self.relx,
+                                     max_width=self.max_width,
+                                     max_height=1)
+        status_offset = len(self.status_prefix.value) + 1
+        self.status.multi_set(rely=self.rely + self.height - 3,
+                              relx=self.relx + status_offset,
+                              max_width=self.max_width - status_offset,
+                              max_height=1)
+
+
