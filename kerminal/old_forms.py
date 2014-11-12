@@ -209,9 +209,15 @@ class FormMuttActiveTraditionalWithInfo(FormMuttActiveTraditional):
         #self.wInfo.important = True
         #self.nextrely = 3
 
-from random import randint
 
 class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
+    """
+    This KerminalForm class is not a very conventional npyscreen Form class. It
+    does some jobs normally associated with AppManaged, managing widgets and
+    containers instead of forms. It is modified to work with the experimental
+    live widget and container features, introducing some other unique aspects to
+    its operation.
+    """
     STATUS_WIDGET_X_OFFSET = 1
     STATUS_WIDGET_CLASS = LiveTextfield
     ACTION_CONTROLLER = KerminalCommands
@@ -220,6 +226,7 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
     #MAIN_WIDGET_CLASS = BoxContainer
     #MAIN_WIDGET_CLASS = GridContainer
     MAIN_WIDGET_CLASS = SmartContainer
+    #MAIN_WIDGET_CLASS = MultiLine
     FIX_MINIMUM_SIZE_WHEN_CREATED = False
 
     def __init__(self, *args, **kwargs):
@@ -232,33 +239,29 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         self.wMain.editable = False
         self.wMain.fill_rows_first = True
         self.wMain.margin = 0
+        #self.resize()  # might be needed for non-zero margin
         #self.wMain.scheme = 'ffdh-bottom'
         self.wMain.scheme = 'ffdh-top'
+        self.m = self.wMain.add(MultiLine, rely=5)
+        self.m.values = ['line0', 'line1', 'line2']
 
-        #self.wMain.add_widget(FixedText, value='Box', widget_id='Box')
-
-        for i in range(40):
-            h = randint(5, 12)
-            w = randint(10, 15)
-            box = self.wMain.add_widget(BoxContainer, height=h, width=w, inflate=False, header='header', footer='footer')
-            val = 'Box{0}'.format(i)
-            box.add_widget(FixedText, value=val, widget_id=val)
-            live = box.add_widget(LiveTextfield, name='Live', value='live')
-            live.feed = lambda: strftime("%H:%M:%S")
-            self.live_widgets.append(live)
-
-        self.resize()
-        #sc = self.wMain.add_widget(SmartContainer, height=25, width=70, scheme='ffdh-bottom')
-        #for i in range(15):
-            #h = randint(4, 10)
+        #from random import randint
+        #for i in range(40):
+            #h = randint(5, 12)
             #w = randint(10, 15)
-            #box = sc.add_widget(BoxContainer, height=h, width=w)
+            #box = self.wMain.add_widget(BoxContainer,
+                                        #height=h,
+                                        #width=w,
+                                        #inflate=False,
+                                        #header='header',
+                                        #footer='footer')
             #val = 'Box{0}'.format(i)
             #box.add_widget(FixedText, value=val, widget_id=val)
             #live = box.add_widget(LiveTextfield, name='Live', value='live')
             #live.feed = lambda: strftime("%H:%M:%S")
             #self.live_widgets.append(live)
-        #grid = self.wMain.add_widget(GridContainer, rows=2, cols=2, diagnostic='Z')
+
+        self.resize()
 
     def go_back(self, *args, **kwargs):
         log.info('going back')
@@ -275,6 +278,8 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
     def resize(self):
         super(FormMuttActiveTraditionalWithInfo, self).resize()
 
+        self.m.values.append('lines')
+
         self.wInfo.rely = self.lines - 3 - self.BLANK_LINES_BASE
         self.wStatus2.rely = self.lines - 2 - self.BLANK_LINES_BASE
         self.wMain.max_height = self.lines - 4 - self.BLANK_LINES_BASE
@@ -284,4 +289,3 @@ class KerminalForm(FormMuttActiveTraditionalWithInfo, FormWithLiveWidgets):
         self.wStatus1.resize()
         self.wStatus2.resize()
         self.wCommand.resize()
-        #self.wCommand.rely = self.columns-1-self.BLANK_LINES_BASE

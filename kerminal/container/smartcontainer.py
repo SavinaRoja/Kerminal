@@ -48,8 +48,6 @@ class SmartContainer(BaseContainer):
         self.height = self.max_height
         self.width = self.max_width
 
-        #self.rearrange_widgets()
-
         #The SmartContainer only sets the max_width and max_height of the
         #contained items according to its own maximums (less margins). As a
         #result of this and its management by height/width attrs, some thought

@@ -16,12 +16,21 @@ import logging
 log = logging.getLogger('npyscreen2.kerminal')
 
 
-def status_line1(thread):
+#class KerminalHeader(npyscreen2.TextField):
+
+    #def __init__(self, form, parent, *args, **kwargs):
+        #super(KerminalHeader, self).__init__(form, parent, *args, **kwargs)
+
+    #def feed(self):
+
+
+def header_feed(thread):
     status = ' Kerminal v {0} - Sys. Time: {1} '.format(__version__,
                                                         strftime("%Y-%m-%d %H:%M:%S"))
     if thread.connected:
         status += '- Connected: {0} '.format(thread.data.get('v.name'))
     return status
+    #self.value = status
 
 
 class KerminalApp(npyscreen2.App):
@@ -32,11 +41,10 @@ class KerminalApp(npyscreen2.App):
         self.stream = CommsThread()
         self.stream.start()
         self.main_form = self.add_form(KerminalForm, 'MAIN')
-        self.main_form.header.feed = partial(status_line1, self.stream)
+        self.main_form.header.feed = partial(header_feed, self.stream)
 
 
 class KerminalForm(npyscreen2.Form):
-
     def __init__(self, *args, **kwargs):
         super(KerminalForm, self).__init__(*args, **kwargs)
 
@@ -92,48 +100,51 @@ class KerminalForm(npyscreen2.Form):
                                      widget_id='command_line',
                                      relx=self.relx,
                                      rely=self.rely + self.height - 1,
-                                     auto_mange=False,
+                                     auto_manage=False,
                                      editable=True,
                                      value='Press ESC to enter commands')
 
         self.status_prefix = self.add(npyscreen2.TextField,
-                                    widget_id='status_prefix',
-                                    relx=self.relx,
-                                    rely=self.rely + self.height - 3,
-                                    auto_manage=True,
-                                    editable=False,
-                                    value='Status:',
-                                    height=1,
-                                    color='CONTROL')
+                                      widget_id='status_prefix',
+                                      relx=self.relx,
+                                      rely=self.rely + self.height - 3,
+                                      auto_manage=True,
+                                      editable=False,
+                                      value='Status:',
+                                      height=1,
+                                      color='CONTROL')
 
         self.status = self.add(npyscreen2.TextField,
-                             widget_id='status_prefix',
-                             relx=self.relx,
-                             rely=self.rely + self.height - 3,
-                             auto_manage=True,
-                             editable=False,
-                             value='TEXT',
-                             height=1)
+                               widget_id='status_prefix',
+                               relx=self.relx,
+                               rely=self.rely + self.height - 3,
+                               auto_manage=True,
+                               editable=False,
+                               value='',
+                               height=1,
+                               feed_reset=True,
+                               #feed_reset_time=10,
+                               )
 
     def while_waiting(self):
-        self.header.feed()
+        self.call_feed()
         self.display()
 
     def info(self, msg):
         self.status_prefix.value = 'INFO:'
-        self.status.value = msg
+        self.status.feed = lambda: msg
 
     def warning(self, msg):
         self.status_prefix.value = 'WARNING:'
-        self.status.value = msg
+        self.status.feed = lambda: msg
 
     def error(self, msg):
         self.status_prefix.value = 'ERROR:'
-        self.status.value = msg
+        self.status.feed = lambda: msg
 
     def critical(self, msg):
         self.status_prefix.value = 'CRITICAL:'
-        self.status.value = msg
+        self.status.feed = lambda: msg
 
     def resize(self):
         self.top_bar.multi_set(rely=self.rely,

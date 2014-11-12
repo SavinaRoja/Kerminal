@@ -51,6 +51,8 @@ class BaseContainer(Widget):
         self.left_margin = left_margin
         self.right_margin = right_margin
 
+        self.create()
+
     def add_widget(self,
                    widget_class,
                    widget_id=None,
@@ -98,6 +100,8 @@ class BaseContainer(Widget):
 
         return widget_proxy
 
+    add = add_widget
+
     def remove_widget(self, widget=None, widget_id=None):
         """
         `remove_widget` can be used in two ways: the first is to pass in a
@@ -137,6 +141,12 @@ class BaseContainer(Widget):
                 del self.contained_map[map_key]
             self.resize()
             return True
+
+    def create(self):
+        """
+        This method is called after instantiation of the Base Container
+        """
+        pass
 
     def resize(self):
         """
