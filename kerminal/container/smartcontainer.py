@@ -48,15 +48,27 @@ class SmartContainer(BaseContainer):
         self.height = self.max_height
         self.width = self.max_width
 
-        for widget in self.contained:
-            widget.max_width = self.max_width - (self.left_margin + self.right_margin)
-            widget.max_height = self.max_height - (self.top_margin + self.bottom_margin)
+        #self.rearrange_widgets()
 
+        #The SmartContainer only sets the max_width and max_height of the
+        #contained items according to its own maximums (less margins). As a
+        #result of this and its management by height/width attrs, some thought
+        #should be given to how contained items expand
+        for widget in self.contained:
+            widget.max_width = self.max_width -\
+                               (self.left_margin + self.right_margin)
+            widget.max_height = self.max_height -\
+                               (self.top_margin + self.bottom_margin)
+
+        self.rearrange_widgets()
+
+    def rearrange_widgets(self):
         self.scheme_map[self.scheme]()
 
     def ffdh_top(self):
         #Re-ordering self.contained by descending height
         self.contained.sort(key=lambda widget: widget.height, reverse=True)
+
         start_y = self.rely + self.top_margin
         end_y = self.rely + self.height - self.bottom_margin
         start_x = self.relx + self.left_margin
@@ -68,9 +80,12 @@ class SmartContainer(BaseContainer):
 
         for widget in self.contained:
             for level in levels:
-                if level >= end_y:
-                    widget.hidden = True  # this aint what I think it is
+                if level + widget.height >= end_y:
+                    widget.hidden = True
+                    widget.relx = self.relx
+                    widget.rely = self.rely
                     break
+                widget.hidden = False
                 x_cur = level_x[level]
                 if widget.width <= width - x_cur:
                     widget.rely = level
@@ -86,18 +101,27 @@ class SmartContainer(BaseContainer):
         #Re-ordering self.contained by descending height
         self.contained.sort(key=lambda widget: widget.height, reverse=True)
 
-        levels = [self.rely + self.height]
-        level_x = {self.rely + self.height: 0}
+        start_y = self.rely + self.height - self.bottom_margin
+        end_y = self.rely + self.top_margin
+        start_x = self.relx + self.left_margin
+        end_x = self.relx + self.width - self.right_margin
+        width = end_x - start_x
+
+        levels = [start_y]
+        level_x = {start_y: 0}
 
         for widget in self.contained:
             for level in levels:
-                if level <= self.rely:
-                    widget.hidden = True  # this aint what I think it is
+                if level - widget.height <= end_y:
+                    widget.hidden = True
+                    widget.relx = self.relx
+                    widget.rely = self.rely
                     break
+                widget.hidden = False
                 x_cur = level_x[level]
-                if widget.width <= self.width - x_cur:
+                if widget.width <= width - x_cur:
                     widget.rely = level - widget.height
-                    widget.relx = x_cur
+                    widget.relx = x_cur + start_x
                     if x_cur == 0:
                         new_level = level - widget.height
                         levels.append(new_level)
@@ -114,4 +138,8 @@ class SmartContainer(BaseContainer):
         if val.lower() in self.scheme_map.keys():
             self._scheme = val
         else:
-            raise ValueError('{0} not in {1}'.format(val, self.scheme_map.keys()))
+            raise ValueError('{0} not in {1}'.format(val,
+                                                     self.scheme_map.keys()))
+
+    def calculate_area_needed(self):
+        return 0, 0

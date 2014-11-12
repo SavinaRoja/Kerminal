@@ -203,6 +203,8 @@ class BaseContainer(Widget):
             self.parent.curses_pad.addch(self.rely, self.relx, self.diagnostic)
 
         for contained in self.contained:
+            if contained.hidden:
+                continue
             contained.update(clear=clear)
 
     def _display(self):
@@ -249,9 +251,9 @@ class BaseContainer(Widget):
         """
         if val is False:
             val = 0
-        max_h = self.parent.curses_pad.getmaxyx()[0] - self.rely - 1
-        if val > max_h:
-            val = max_h
+        #max_h = self.parent.curses_pad.getmaxyx()[0] - self.rely - 1
+        #if val > max_h:
+            #val = max_h
         self._max_height = val
         #if self.height > self._max_height:
             #self.height = self._max_height
@@ -268,9 +270,9 @@ class BaseContainer(Widget):
         """
         if val is False:
             val = 0
-        max_w = self.parent.curses_pad.getmaxyx()[1] - self.relx -1
-        if val > max_w:
-            val = max_w
+        #max_w = self.parent.curses_pad.getmaxyx()[1] - self.relx -1
+        #if val > max_w:
+            #val = max_w
         self._max_width = val
         #if self._max_width > self.width:
             #self.width = self._max_width
