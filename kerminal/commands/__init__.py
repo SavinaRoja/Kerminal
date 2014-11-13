@@ -12,6 +12,7 @@ from functools import wraps, partial
 import json
 import logging
 import os
+import weakref
 import sys
 
 from ..communication import OrderedSet
@@ -19,12 +20,11 @@ from ..communication import OrderedSet
 from ..telemachus_api import orbit_plots_names, plotables , orbit_plotables
 
 log = logging.getLogger('kerminal.commands')
-log.debug('commands')
 
 
 #The docstrings for commands follow a modified PEP8! (80 + indent) characters
 #this is to allow conformity of help messages regardless of indent level
-def connect(args, widget_proxy, parent_form, stream):
+def connect(args, widget_proxy, form, stream):
     """
     connect
 
@@ -66,7 +66,7 @@ def connect(args, widget_proxy, parent_form, stream):
         try:
             port = int(args['<port>'])
         except ValueError:
-            parent_form.wInfo.feed = 'Port must be a number'
+            form.error('Port must be a number')
             return
 
     #Instructions to the Communication Thread to make the connection
@@ -74,19 +74,19 @@ def connect(args, widget_proxy, parent_form, stream):
     stream.port = port
     stream.make_connection.set()
 
-    parent_form.wInfo.feed = 'Making connection...'
+    form.info('Making connection...')
 
     #Wait for the Communication Thread to tell us it is done
     stream.connect_event.wait()
     stream.connect_event.clear()
 
     if not stream.connected:  # Failed
-        parent_form.wInfo.feed = 'Could not connect'
+        form.error('Could not connect')
     else:
-        parent_form.wInfo.feed = 'Connected!'
+        form.info('Connected!')
 
 
-def demo(args, widget_proxy, parent_form, stream):
+def demo(args, widget_proxy, form, stream):
     """
     demo
 
@@ -98,7 +98,7 @@ def demo(args, widget_proxy, parent_form, stream):
 
     log.info('demo command called')
     if not stream.connected:
-        parent_form.wInfo.feed = 'Not connected!'
+        form.error('Not connected!')
         return
 
     #Subscribe to the necessary data
@@ -132,11 +132,11 @@ def demo(args, widget_proxy, parent_form, stream):
 
         widget_instance.values = form.format(**data).split('\n')
 
-    parent_form.wMain.feed = partial(multiline_feed, parent_form.wMain)
-    parent_form.wInfo.feed = 'Showing Demo!'
+    form.main.feed = partial(multiline_feed, form.main)
+    form.info('Showing Demo!')
 
 
-def disconnect(args, widget_proxy, parent_form, stream):
+def disconnect(args, widget_proxy, form, stream):
     """
     disconnect
 
@@ -150,10 +150,10 @@ def disconnect(args, widget_proxy, parent_form, stream):
         stream.loop.stop()
         stream.make_connection.clear()
     else:
-        parent_form.wInfo.feed = 'Not connected!'
+        form.warning('Not currently connected!')
 
 
-def haiku(args, widget_proxy, parent_form, stream):
+def haiku(args, widget_proxy, form, stream):
     """
     haiku
 
@@ -173,10 +173,10 @@ def haiku(args, widget_proxy, parent_form, stream):
 
     def multiline_feed(widget_instance):
         widget_instance.values = haiku.split('\n')
-    parent_form.wMain.feed = partial(multiline_feed, parent_form.wMain)
+    form.main.feed = partial(multiline_feed, form.main)
 
 
-def rate(args, widget_proxy, parent_form, stream):
+def rate(args, widget_proxy, form, stream):
     """
     rate
 
@@ -197,7 +197,7 @@ def rate(args, widget_proxy, parent_form, stream):
     """
     log.info('rate command called')
     if not stream.connected:
-        parent_form.wInfo.feed = 'Not connected!'
+        form.critical('Not connected!')
         return
 
     try:
@@ -206,14 +206,14 @@ def rate(args, widget_proxy, parent_form, stream):
         try:
             interval_f = float(args['<interval>'])
         except ValueError:
-            parent_form.wInfo.feed = 'Rate interval must be a number!'
+            form.error('Rate interval must be a number!')
             return
         else:
             interval = round(interval_f)
     stream.msg_queue.put({'rate': interval})
 
 
-def send(args, widget_proxy, parent_form, stream):
+def send(args, widget_proxy, form, stream):
     """
     send
 
@@ -234,7 +234,7 @@ def send(args, widget_proxy, parent_form, stream):
     log.info('info command called')
 
     if not stream.connected:
-        parent_form.wInfo.feed = 'Not connected!'
+        form.error('Not connected!')
         return
     msg = args['<json-string>']
     log.debug(msg)
@@ -248,7 +248,7 @@ def send(args, widget_proxy, parent_form, stream):
         stream.msg_queue.put(msg_dict)
 
 
-def quits(args, widget_proxy, parent_form, stream):
+def quits(args, widget_proxy, form, stream):
     """
     quit
 
@@ -263,18 +263,23 @@ def quits(args, widget_proxy, parent_form, stream):
 
     log.info('quit command called')
 
-    parent_form.parentApp.setNextForm(None)
-    parent_form.parentApp.switchFormNow()
-    disconnect(args, widget_proxy, parent_form, stream)
+    form.parent_app.set_next_form(None)
+    form.parent_app.switch_form_now()
+    disconnect(args, widget_proxy, form, stream)
 
 
 class KerminalCommands(object):
-    def __init__(self, parent=None):
+    def __init__(self, form, parent):
+        try:
+            self.form = weakref.proxy(form)
+        except TypeError:
+            self.form = form
+
         try:
             self.parent = weakref.proxy(parent)
-        except:
+        except TypeError:
             self.parent = parent
-        #self._action_list = []
+
         self._commands = {'connect': connect,
                           'demo': demo,
                           'disconnect': disconnect,
@@ -285,7 +290,6 @@ class KerminalCommands(object):
                           'send': send,
                           'quit': quits,
                           'exit': quits}
-        #self.create()
 
     def process_command_complete(self, command_line, control_widget_proxy):
         for comm in command_line.split(';'):
@@ -296,22 +300,22 @@ class KerminalCommands(object):
                 return
             command_func = self._commands.get(command)
             if command_func is None:
-                self.parent.wInfo.feed = 'command "{0}" not recognized. See "help"'.format(command)
+                self.form.error('command "{0}" not recognized. See "help"'.format(command))
                 return
             try:
                 args = docopt(command_func.__doc__,
                               version='Kerminal v {0}'.format(__version__),
                               argv=argv)
             except DocoptExit as e:
-                self.parent.wInfo.feed = 'command usage incorrect. See "help {0}"'.format(command)
+                self.form.error('command usage incorrect. See "help {0}"'.format(command))
                 log.debug(e)
             else:
                 command_func(args,
                              control_widget_proxy,
-                             self.parent,
-                             self.parent.parentApp.stream)
+                             self.form,
+                             self.form.parent_app.stream)
 
-    def helps(self, args, widget_proxy, parent_form, stream):
+    def helps(self, args, widget_proxy, form, stream):
         """
         help
 
@@ -326,8 +330,6 @@ class KerminalCommands(object):
         """
 
         log.info('help command called')
-
-        #if parent_form.wMain
 
         def doc_style(docstring):
             lines = docstring.splitlines()
@@ -377,4 +379,4 @@ class KerminalCommands(object):
 
         def multiline_feed(widget_instance):
             widget_instance.values = help_msg.split('\n')
-        parent_form.wMain.feed = partial(multiline_feed, parent_form.wMain)
+        form.main.feed = partial(multiline_feed, form.main)

@@ -28,8 +28,6 @@ from kerminal import KerminalApp, __version__
 import logging
 import sys
 
-log = logging.getLogger('kerminal.launcher')
-
 
 def get_level(level_string):
     """
@@ -52,9 +50,8 @@ if __name__ == '__main__':
         base_log = logging.getLogger('kerminal')
         l = logging.FileHandler('kerminal.log')
         l.setLevel(get_level(args['--ui-log']))
+        l.setFormatter(logging.Formatter('%(name)s [%(levelname)s] %(message)s'))
         base_log.addHandler(l)
 
     app = KerminalApp()
     app.run()
-
-
