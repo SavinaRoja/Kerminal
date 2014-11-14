@@ -26,7 +26,7 @@ class TextCommandBox(npyscreen2.TextField):
         self.history = history
         self._history_store = collections.deque(maxlen=history_max)
         self._current_history_index = None
-        self._current_command = None
+        self._current_command = ''
 
         self.toggle_val = toggle_val
 
@@ -80,6 +80,7 @@ class TextCommandBox(npyscreen2.TextField):
             self._current_history_index = False
         self.form.action_controller.process_command_complete(self.value, weakref.proxy(self))
         self.value = ''
+        self.cursor_position = 0
 
     def when_value_edited(self):
         super(TextCommandBox, self).when_value_edited()
@@ -104,3 +105,47 @@ class KerminalStatusText(npyscreen2.TextField):
         #Returns itself to a standard view when the feed has completed
         self.form.status_prefix.value = 'STATUS:'
         self.form.status_prefix.color = 'DEFAULT'
+
+
+class SemiInteractiveText(npyscreen2.TextField):
+
+    def __init__(self,
+                 form,
+                 parent,
+                 *args,
+                 **kwargs):
+        super(SemiInteractiveText, self).__init__(form,
+                                                  parent,
+                                                  show_cursor=False,
+                                                  editable=True,
+                                                  *args,
+                                                  **kwargs)
+
+    def set_up_handlers(self):
+        """
+        This function should be called somewhere during object initialisation
+        (which all library-defined widgets do). You might like to override this
+        in your own definition, but in most cases the `add_handlers` or
+        `add_complex_handlers` methods are what you want.
+        """
+        self.handlers = {curses.ascii.NL: self.h_exit_down,
+                         curses.ascii.CR: self.h_exit_down,
+                         curses.ascii.TAB: self.h_exit_down,
+                         #curses.KEY_BTAB: self.h_exit_up,
+                         curses.KEY_DOWN: self.h_exit_down,
+                         curses.KEY_UP: self.h_exit_up,
+                         curses.KEY_LEFT: self.h_exit_left,
+                         curses.KEY_RIGHT: self.h_exit_right,
+                         "^P": self.h_exit_up,
+                         "^N": self.h_exit_down,
+                         curses.ascii.ESC: self.h_exit_escape,
+                         #curses.KEY_MOUSE: self.h_exit_mouse,
+                         }
+        self.complex_handlers = []
+
+    def pre_edit(self):
+        self.highlight = True
+
+    def post_edit(self):
+        self.highlight = False
+

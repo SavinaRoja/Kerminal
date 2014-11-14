@@ -59,3 +59,19 @@ class OrderedSet(collections.MutableSet):
         if isinstance(other, OrderedSet):
             return len(self) == len(other) and list(self) == list(other)
         return set(self) == set(other)
+
+launch_text = """Welcome to Kerminal!
+---
+The Escape Key will toggle your access to the Kerminal Command Line.
+---
+Type "help" to see a summary of all available commands; type "help <command>"
+to learn more about that command in particular.
+---
+If KSP and Kerminal are running on the same computer, you can probably
+connect right away by typing "connect localhost". "help connect" will have
+more details.
+---
+
+Developer: Paul Barton (SavinaRoja)
+Project Page and Source Code: https://github.com/SavinaRoja/Kerminal
+"""

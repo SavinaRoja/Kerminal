@@ -5,8 +5,9 @@
 
 from . import __version__
 from .commands import KerminalCommands
-from .containers import EscapeForwardingSmartContainer
+from .containers import EscapeForwardingSmartContainer, EscapeForwardingGridContainer, KerminalMultiLineText
 from .widgets import TextCommandBox, KerminalStatusText
+from .utils import launch_text
 
 import npyscreen2
 
@@ -29,39 +30,33 @@ class KerminalForm(npyscreen2.Form):
 
         self.action_controller = KerminalCommands(self, self)
 
-        self.main = self.add(EscapeForwardingSmartContainer,
-                             widget_id='main',
-                             editable=True,)
-        self.main.add(npyscreen2.TextField,
-                      value='Test1',
-                      editable=True,
-                      )
-        self.main.add(npyscreen2.TextField,
-                      value='Test2',
-                      editable=True,
-                      )
+        self.text = self.add(KerminalMultiLineText,
+                             widget_id='text',
+                             editable=True,
+                             margin=0,
+                             auto_manage=False)
+        self.text.build_contained_from_text(launch_text)
+
+        self.smart = self.add(EscapeForwardingSmartContainer,
+                              widget_id='smart',
+                              editable=True,
+                              auto_manage=False,)
 
         self.top_bar = self.add(npyscreen2.BorderBox,
                                 widget_id='top_bar',
-                                preserve_instantiation_dimensions=False,
                                 auto_manage=False,
                                 top=True,
                                 bottom=False,
                                 left=False,
-                                right=False,
-                                max_height=self.max_height,
-                                max_width=self.max_width)
+                                right=False)
 
         self.bot_bar = self.add(npyscreen2.BorderBox,
                                 widget_id='bottom_bar',
-                                preserve_instantiation_dimensions=False,
                                 auto_manage=False,
                                 top=True,
                                 bottom=False,
                                 left=False,
-                                right=False,
-                                max_height=self.max_height,
-                                max_width=self.max_width)
+                                right=False)
 
         self.header = self.add(npyscreen2.TextField,
                                widget_id='header',
@@ -87,37 +82,49 @@ class KerminalForm(npyscreen2.Form):
                                      editable=True,
                                      value='Press ESC to enter commands')
 
-        self.status_prefix = self.add(npyscreen2.TextField,
+        self.status_prefix = self.add(KerminalStatusText,
                                       widget_id='status_prefix',
                                       auto_manage=False,
                                       editable=False,
                                       value='STATUS:',
                                       height=1,
-                                      #color='CONTROL',
                                       bold=True)
 
-        self.status = self.add(KerminalStatusText,
+        self.status = self.add(npyscreen2.TextField,
                                widget_id='status',
-                               auto_manage=True,
+                               auto_manage=False,
                                editable=False,
                                value='',
-                               feed_reset=True,
-                               #feed_reset_time=10,
-                               )
+                               feed_reset=True)
+        self.show_text()
+
+    #At this time, main can only be "text" or "smart"
+    def show_text(self, msg=None):
+        self.smart.hidden = True
+        self.text.hidden = False
+        if msg is not None:
+            self.text.build_contained_from_text(msg)
+            self.text._resize()
+
+    def show_smart(self):
+        self.smart.hidden = False
+        self.text.hidden = True
 
     def set_up_exit_condition_handlers(self):
         super(KerminalForm, self).set_up_exit_condition_handlers()
         self.how_exited_handlers.update({'escape': self.toggle_commands})
 
     def toggle_commands(self, inpt=None):
-        main_index = self.contained.index(self.main)
         command_line_index = self.contained.index(self.command_line)
-        if self.edit_index == main_index:
+        if self.edit_index == command_line_index:
+            if not self.text.hidden:
+                self.edit_index = self.contained.index(self.text)
+            elif not self.smart.hidden:
+                self.edit_index = self.contained.index(self.smart)
+            self.command_line.value = 'Press ESC to enter commands'
+        else:
             self.edit_index = command_line_index
             self.command_line.value = ''
-        else:
-            self.edit_index = main_index
-            self.command_line.value = 'Press ESC to enter commands'
 
     def while_waiting(self):
         self.call_feed()
@@ -148,10 +155,14 @@ class KerminalForm(npyscreen2.Form):
         self.resize_status_line()
 
     def resize(self):
-        self.main.multi_set(rely=self.rely + 1,
+        self.text.multi_set(rely=self.rely + 1,
                             relx=self.relx,
-                            max_height=self.max_height - 3,
-                            max_width = self.max_width)
+                            max_height=self.max_height - 4,
+                            max_width=self.max_width)
+        self.smart.multi_set(rely=self.rely + 1,
+                             relx=self.relx,
+                             max_height=self.max_height - 4,
+                             max_width=self.max_width)
         self.top_bar.multi_set(rely=self.rely,
                                relx=self.relx,
                                max_height=self.max_height,
@@ -185,5 +196,3 @@ class KerminalForm(npyscreen2.Form):
                               relx=self.relx + status_offset,
                               max_width=self.max_width - status_offset,
                               max_height=1)
-
-

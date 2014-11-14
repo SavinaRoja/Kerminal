@@ -26,6 +26,7 @@ Options:
 from docopt import docopt
 from kerminal import KerminalApp, __version__
 import logging
+import npyscreen2
 import sys
 
 
@@ -47,11 +48,13 @@ if __name__ == '__main__':
     args = docopt(__doc__, version=__version__)
 
     if args['--ui-log']:
-        base_log = logging.getLogger('kerminal')
-        l = logging.FileHandler('kerminal.log')
-        l.setLevel(get_level(args['--ui-log']))
-        l.setFormatter(logging.Formatter('%(name)s [%(levelname)s] %(message)s'))
-        base_log.addHandler(l)
+        npyscreen2.activate_logging()
+        npyscreen2.add_rotating_file_handler('kerminal.log',
+                                             level=args['--ui-log'],
+                                             max_bytes=100000000,  # 100MB
+                                             backup_count=5,
+                                             filtr='npyscreen2.test',
+                                             mode='w')
 
     app = KerminalApp()
     app.run()
