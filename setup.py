@@ -7,6 +7,15 @@ except ImportError:
     from distutils.core import setup
 import os
 
+import sys
+
+#Inform user that Kerminal must use Python 3.4.0 or higher
+py_version = sys.version_info[:3]
+if py_version[0] < 3:
+    sys.exit('Sorry, Kerminal only works with Python 3.4.0 or higher')
+elif py_version[1] < 4:
+    sys.exit('Sorry, Kerminal only works with Python 3.4.0 or higher')
+
 
 def long_description():
     readme = os.path.join(os.path.dirname(__file__), 'README.md')
