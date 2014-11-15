@@ -87,55 +87,7 @@ def connect(args, widget_proxy, form, stream):
     else:
         form.info('Connected!')
 
-
-#def demo(args, widget_proxy, form, stream):
-    #"""
-    #demo
-
-    #Show a demonstration of data streaming if connected.
-
-    #Usage:
-      #demo
-    #"""
-
-    #log.info('demo command called')
-    #if not stream.connected:
-        #form.error('Not connected!')
-        #return
-
-    ##Subscribe to the necessary data
-    ##stream.msg_queue.put({'+': orbit_plotables})
-    #for var in orbit_plotables:
-        #stream.subscription_manager.add(var)
-
-    ##Create a function that will update the multline widget's .values
-    #def multiline_feed(widget_instance):
-        #getter = lambda k: stream.data.get(k, 0)
-        #form = '''
- #Relative Velocity  : {o_relativeVelocity:0.1f}   (m/s)
- #Periapsis          : {o_PeA:0.1f} (m)
- #Apoapsis           : {o_ApA:0.1f} (m)
- #Time to Apoapsis   : {o_timeToAp:0.1f} (s)
- #Time to Periapsis  : {o_timeToPe:0.1f} (s)
- #Orbit Inclination  : {o_inclination:0.1f}
- #Eccentricity       : {o_eccentricity:0.1f}
- #Epoch              : {o_epoch:0.1f} (s)
- #Orbital Period     : {o_period:0.1f} (s)
- #Argument of Peri.  : {o_argumentOfPeriapsis:0.1f}
- #Time to Trans1     : {o_timeToTransition1:0.1f} (s)
- #Time to Trans2     : {o_timeToTransition2:0.1f} (s)
- #Semimajor Axis     : {o_sma:0.1f}
- #Long. of Asc. Node : {o_lan:0.1f}
- #Mean Anomaly       : {o_maae:0.1f}
- #Time of Peri. Pass : {o_timeOfPeriapsisPassage:0.1f} (s)
- #True Anomaly       : {o_trueAnomaly:0.1f}
-#'''
-        #data = {key.replace('.', '_'): getter(key) for key in orbit_plotables}
-
-        #widget_instance.values = form.format(**data).split('\n')
-
-    #form.main.feed = partial(multiline_feed, form.main)
-    #form.info('Showing Demo!')
+    form.show_smart()
 
 
 def disconnect(args, widget_proxy, form, stream):
@@ -153,6 +105,9 @@ def disconnect(args, widget_proxy, form, stream):
         stream.make_connection.clear()
     else:
         form.warning('Not currently connected!')
+        return
+
+    form.show_text()
 
 
 #TODO: Figure out why full unicode support is missing in npyscreen2
@@ -253,6 +208,36 @@ def send(args, widget_proxy, form, stream):
         stream.msg_queue.put(msg_dict)
 
 
+def text(args, widget_proxy, form, stream):
+    """\
+    text
+
+    Shows the most recently displayed text on screen
+
+    Usage:
+      text [options]
+
+    Options:
+      -h --help    Show this help message and exit
+    """
+    form.show_text()
+
+
+def telemetry(args, widget_proxy, form, stream):
+    """\
+    telemetry
+
+    Brings up the telemetry screen
+
+    Usage:
+      smart [options]
+
+    Options:
+      -h --help    Show this help message and exit
+    """
+    form.show_smart()
+
+
 def quits(args, widget_proxy, form, stream):
     """\
     quit
@@ -293,6 +278,8 @@ class KerminalCommands(object):
                           'log': logs,
                           'rate': rate,
                           'send': send,
+                          'text': text,
+                          'telemetry': telemetry,
                           'quit': quits,
                           'exit': quits}
 
@@ -374,6 +361,10 @@ log [commands]
  -- Utilities for logging data to file; see "help log" for in depth details.
 send <json_string>
  -- Send an arbitrary JSON string to the Telemachus server (if connected).
+telemetry
+ -- Bring up the screen for telemetry information
+text
+ -- Shows the most recent text on screen
 quit
  -- Shut down Kerminal.
 '''.format(version=__version__)

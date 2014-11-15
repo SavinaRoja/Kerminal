@@ -220,13 +220,30 @@ api_plotables = ['a.version',  # Telemachus Version
 time_warp_plotables = ['t.universalTime',  # Universal Time
                        ]
 
+resource_plotables = ['r.resourceMax[ElectricCharge]',
+                      'r.resourceCurrent[ElectricCharge]',
+                      'r.resource[ElectricCharge]',
+                      'r.resourceMax[LiquidFuel]',
+                      'r.resourceCurrent[LiquidFuel]',
+                      'r.resource[LiquidFuel]',
+                      'r.resourceMax[Oxidizer]',
+                      'r.resourceCurrent[Oxidizer]',
+                      'r.resource[Oxidizer]',
+                      'r.resourceCurrent[MonoPropellant]',
+                      'r.resource[MonoPropellant]',
+                      'r.resourceMax[XenonGas]',
+                      'r.resourceCurrent[XenonGas]',
+                      'r.resource[XenonGas]',
+                      'r.resourceMax[IntakeAir]',
+                      'r.resourceCurrent[IntakeAir]',
+                      'r.resource[IntakeAir]']
+
 #These consitute the safe set of plotable values to work with
 plotables = flight_plotables + target_plotables + docking_plotables + \
             navball_plotables + vessel_plotables + orbit_plotables + \
-            sensor_plotables + api_plotables + time_warp_plotables\
+            sensor_plotables + api_plotables + time_warp_plotables + \
+            resource_plotables
 
-
-#Plain API Entries: how exactly do these work?
 resources = ['r.resource',         # Resource Information [string resource type]
              'r.resourceCurrent',  # Resource Information for Current Stage [string resource type]
              'r.resourceMax',      # Max Resource Information [string resource type]

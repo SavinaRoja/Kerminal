@@ -18,7 +18,7 @@ log.setLevel(logging.DEBUG)
 
 #Initialize all plotable variables in the dict
 global LIVE_DATA
-LIVE_DATA = {k: 0 for k in plotables}
+LIVE_DATA = {k: 'None' for k in plotables}
 
 global MSG_QUEUE
 MSG_QUEUE = queue.Queue()
@@ -188,6 +188,9 @@ class TelemachusProtocol(WebSocketClientProtocol):
                     if self.data_log is not None:
                         self.data_log.close()
                         self.data_log = None
+            else:
+                global LIVE_DATA
+                LIVE_DATA.update({'p.paused': msg['p.paused']})
 
     def onError(self, *args):
         log.debug('Error: {0}'.format(args))

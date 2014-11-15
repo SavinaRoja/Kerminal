@@ -101,10 +101,15 @@ class TextCommandBox(npyscreen2.TextField):
 
 
 class KerminalStatusText(npyscreen2.TextField):
-    def when_feed_resets(self):
+    def __init__(self, *args, **kwargs):
+        self.when_feed_resets = self._when_feed_resets
+        super(KerminalStatusText, self).__init__(*args, **kwargs)
+
+    def _when_feed_resets(self):
         #Returns itself to a standard view when the feed has completed
         self.form.status_prefix.value = 'STATUS:'
         self.form.status_prefix.color = 'DEFAULT'
+        self.display()
 
 
 class SemiInteractiveText(npyscreen2.TextField):
@@ -112,12 +117,14 @@ class SemiInteractiveText(npyscreen2.TextField):
     def __init__(self,
                  form,
                  parent,
+                 editable=True,
+                 show_cursor=False,
                  *args,
                  **kwargs):
         super(SemiInteractiveText, self).__init__(form,
                                                   parent,
-                                                  show_cursor=False,
-                                                  editable=True,
+                                                  show_cursor=show_cursor,
+                                                  editable=editable,
                                                   *args,
                                                   **kwargs)
 

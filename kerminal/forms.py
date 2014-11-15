@@ -5,7 +5,8 @@
 
 from . import __version__
 from .commands import KerminalCommands
-from .containers import EscapeForwardingSmartContainer, EscapeForwardingGridContainer, KerminalMultiLineText
+#from .containers import EscapeForwardingSmartContainer, EscapeForwardingGridContainer, KerminalMultiLineText
+from . import containers
 from .widgets import TextCommandBox, KerminalStatusText
 from .utils import launch_text
 
@@ -15,10 +16,14 @@ import npyscreen2
 from functools import partial
 from time import strftime
 
+from datetime import datetime
+
 
 def header_feed(thread):
+    now = datetime.now()
     status = ' Kerminal v {0} - Sys. Time: {1} '.format(__version__,
-                                                        strftime("%Y-%m-%d %H:%M:%S"))
+                                                        now.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3])
+                                                        #strftime("%Y-%m-%d %H:%M:%S"))
     if thread.connected:
         status += '- Connected: {0} '.format(thread.data.get('v.name'))
     return status
@@ -30,17 +35,33 @@ class KerminalForm(npyscreen2.Form):
 
         self.action_controller = KerminalCommands(self, self)
 
-        self.text = self.add(KerminalMultiLineText,
+        self.text = self.add(containers.KerminalMultiLineText,
                              widget_id='text',
                              editable=True,
-                             margin=0,
-                             auto_manage=False)
+                             margin=1,
+                             auto_manage=False, hidden=True)
         self.text.build_contained_from_text(launch_text)
 
-        self.smart = self.add(EscapeForwardingSmartContainer,
+        self.smart = self.add(containers.EscapeForwardingSmartContainer,
                               widget_id='smart',
+                              margin=1,
                               editable=True,
-                              auto_manage=False,)
+                              auto_manage=False)
+
+        self.smart.add(containers.OrbitalInfo,
+                       widget_id='orbit0')
+
+        self.smart.add(containers.SurfaceInfo,
+                       widget_id='surface0')
+
+        self.smart.add(containers.TimeInfo,
+                       widget_id='time0')
+
+        self.smart.add(containers.ResourceInfo,
+                       widget_id='resource0')
+
+        self.smart.add(containers.SensorInfo,
+                       widget_id='sensor0')
 
         self.top_bar = self.add(npyscreen2.BorderBox,
                                 widget_id='top_bar',
@@ -82,7 +103,7 @@ class KerminalForm(npyscreen2.Form):
                                      editable=True,
                                      value='Press ESC to enter commands')
 
-        self.status_prefix = self.add(KerminalStatusText,
+        self.status_prefix = self.add(npyscreen2.TextField,
                                       widget_id='status_prefix',
                                       auto_manage=False,
                                       editable=False,
@@ -90,24 +111,28 @@ class KerminalForm(npyscreen2.Form):
                                       height=1,
                                       bold=True)
 
-        self.status = self.add(npyscreen2.TextField,
+        self.status = self.add(KerminalStatusText,
                                widget_id='status',
                                auto_manage=False,
                                editable=False,
                                value='',
                                feed_reset=True)
         self.show_text()
+        #self.show_smart()
 
-    #At this time, main can only be "text" or "smart"
     def show_text(self, msg=None):
+        self.smart.editable = False
         self.smart.hidden = True
+        self.text.editable = True
         self.text.hidden = False
         if msg is not None:
             self.text.build_contained_from_text(msg)
             self.text._resize()
 
     def show_smart(self):
+        self.smart.editable = True
         self.smart.hidden = False
+        self.text.editable = False
         self.text.hidden = True
 
     def set_up_exit_condition_handlers(self):
@@ -157,42 +182,42 @@ class KerminalForm(npyscreen2.Form):
     def resize(self):
         self.text.multi_set(rely=self.rely + 1,
                             relx=self.relx,
-                            max_height=self.max_height - 4,
-                            max_width=self.max_width)
+                            max_height=self.height - 4,
+                            max_width=self.width)
         self.smart.multi_set(rely=self.rely + 1,
                              relx=self.relx,
-                             max_height=self.max_height - 4,
-                             max_width=self.max_width)
+                             max_height=self.height - 4,
+                             max_width=self.width)
         self.top_bar.multi_set(rely=self.rely,
                                relx=self.relx,
-                               max_height=self.max_height,
-                               max_width=self.max_width)
+                               max_height=self.height,
+                               max_width=self.width)
         self.bot_bar.multi_set(rely=self.rely + self.height - 2,
                                relx=self.relx,
-                               max_height=self.max_height,
-                               max_width=self.max_width)
+                               max_height=self.height,
+                               max_width=self.width)
         self.header.multi_set(rely=self.rely,
                               relx=self.relx + 1,
-                              max_width=self.max_width,
+                              max_width=self.width - 1,
                               max_height=1)
         self.cl_header.multi_set(rely=self.rely + self.height - 2,
                                  relx=self.relx + 1,
-                                 max_width=self.max_width,
+                                 max_width=self.width,
                                  max_height=1)
         self.command_line.multi_set(rely=self.rely + self.height - 1,
                                     relx=self.relx,
                                     max_height=1,
-                                    max_width=self.max_width)
+                                    max_width=self.width)
         self.resize_status_line()
 
     def resize_status_line(self):
         self.status_prefix.multi_set(rely=self.rely + self.height - 3,
                                      relx=self.relx,
-                                     max_width=self.max_width,
+                                     max_width=self.width,
                                      max_height=1)
 
         status_offset = len(self.status_prefix.value) + 1
         self.status.multi_set(rely=self.rely + self.height - 3,
                               relx=self.relx + status_offset,
-                              max_width=self.max_width - status_offset,
+                              max_width=self.width - status_offset,
                               max_height=1)
