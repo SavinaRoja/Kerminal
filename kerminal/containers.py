@@ -278,6 +278,93 @@ def paused_formatter(func, width):
     return r_just.format(meanings[p])
 
 
+def charge_formatter(func, width):
+    r_just = '{:>' + str(width) + '}'
+    v = func()
+    if v == 'None':
+        return r_just.format('N/A')
+    v = float(v)
+    #Base units are Wh
+    units = 'Wh'
+    if v >= 1000.0:
+        v /= 1000.0
+        units = 'kWh'
+    if v >= 1000.0:
+        v /= 1000.0
+        units = 'MWh'
+    v = '{:.1f}'.format(v)
+    return r_just.format(' '.join([v, units]))
+
+
+def volume_formatter(func, width):
+    r_just = '{:>' + str(width) + '}'
+    v = func()
+    if v == 'None':
+        return r_just.format('N/A')
+    elif v == '':  # MonoPropellant api string is atypical
+        v = 0
+    v = float(v)
+    #except:
+        #raise ValueError(v)
+    #Base units are Wh
+    units = 'L'
+    if v >= 1000.0:
+        v /= 1000.0
+        units = 'kL'
+    if v >= 1000.0:
+        v /= 1000.0
+        units = 'ML'
+    v = '{:.1f}'.format(v)
+    return r_just.format(' '.join([v, units]))
+
+
+def thermometer_formatter(func, width):
+    r_just = '{:>' + str(width) + '}'
+    t = func()
+    if t == 'None':
+        return r_just.format('N/A')
+    t = float(t.split(',')[1][2:-2])
+    #Base units are C
+    units = 'C'
+    t = '{:.2f}'.format(t)
+    return r_just.format(' '.join([t, units]))
+
+
+def barometer_formatter(func, width):
+    r_just = '{:>' + str(width) + '}'
+    p = func()
+    if p == 'None':
+        return r_just.format('N/A')
+    p = float(p.split(',')[1][2:-2])
+    #Base units are Pa
+    units = 'Pa'
+    p = '{:.2f}'.format(p)
+    return r_just.format(' '.join([p, units]))
+
+
+def gravity_formatter(func, width):
+    r_just = '{:>' + str(width) + '}'
+    g = func()
+    if g == 'None':
+        return r_just.format('N/A')
+    g = float(g.split(',')[1][2:-2])
+    #Base units are Pa
+    units = 'm/s2'
+    g = '{:.2f}'.format(g)
+    return r_just.format(' '.join([g, units]))
+
+
+def accelerometer_formatter(func, width):
+    r_just = '{:>' + str(width) + '}'
+    a = func()
+    if a == 'None':
+        return r_just.format('N/A')
+    a = float(a.split(',')[1][2:-2])
+    #Base units are Pa
+    units = 'Gs'
+    a = '{:.2f}'.format(a)
+    return r_just.format(' '.join([a, units]))
+
 class OrbitalInfo(KerminalLivePlotable):
 
     #Width is sized to suit the fancy_time_formatter up to:
@@ -464,24 +551,24 @@ class ResourceInfo(KerminalLivePlotable):
 
     def create(self):
         #widget_id, title, api-var, formatter_func
-        items = [('electricmax', 'Max Electric:', 'r.resourceMax[ElectricCharge]', plain_formatter),
-                 ('electricurrent', 'Stage Electric:', 'r.resourceCurrent[ElectricCharge]', plain_formatter),
-                 ('electrictotal', 'Total Electric:', 'r.resource[ElectricCharge]', plain_formatter),
-                 ('liquidfuelmax', 'Max Liquid Fuel:', 'r.resourceMax[LiquidFuel]', plain_formatter),
-                 ('liquidfuelcurrent', 'Stage Liquid Fuel:', 'r.resourceCurrent[LiquidFuel]', plain_formatter),
-                 ('liquidfueltotal', 'Current Liquid Fuel:', 'r.resource[LiquidFuel]', plain_formatter),
-                 ('oxidizermax', 'Max Oxidizer:', 'r.resourceMax[Oxidizer]', plain_formatter),
-                 ('oxidizercurrent', 'Stage Oxidizer:', 'r.resourceCurrent[Oxidizer]', plain_formatter),
-                 ('oxidizertotal', 'Total Oxidizer:', 'r.resource[Oxidizer]', plain_formatter),
-                 ('monopropmax', 'Max Mono Prop.:', 'r.resourceMax[MonoPropellant]', plain_formatter),
-                 ('monopropcurrent', 'Stage Mono Prop.:', 'r.resourceCurrent[MonoPropellant]', plain_formatter),
-                 ('monoproptotal', 'Total Mono Prop.:', 'r.resource[MonoPropellant]', plain_formatter),
-                 ('xenongasmax', 'Max Xenon Gas:', 'r.resourceMax[XenonGas]', plain_formatter),
-                 ('xenongascurrent', 'Stage Xenon Gas:', 'r.resourceCurrent[XenonGas]', plain_formatter),
-                 ('xenongastotal', 'Total Xenon Gas:', 'r.resource[XenonGas]', plain_formatter),
-                 ('intakeairmax', 'Max Intake Air:', 'r.resourceMax[IntakeAir]', plain_formatter),
-                 ('intakeaircurrent', 'Stage Intake Air:', 'r.resourceCurrent[IntakeAir]', plain_formatter),
-                 ('intakeairtotal', 'Total Intake Air:', 'r.resource[IntakeAir]', plain_formatter),
+        items = [('electricmax', 'Max Electric:', 'r.resourceMax[ElectricCharge]', charge_formatter),
+                 ('electricurrent', 'Stage Electric:', 'r.resourceCurrent[ElectricCharge]', charge_formatter),
+                 ('electrictotal', 'Total Electric:', 'r.resource[ElectricCharge]', charge_formatter),
+                 ('liquidfuelmax', 'Max Liquid Fuel:', 'r.resourceMax[LiquidFuel]', volume_formatter),
+                 ('liquidfuelcurrent', 'Stage Liquid Fuel:', 'r.resourceCurrent[LiquidFuel]', volume_formatter),
+                 ('liquidfueltotal', 'Current Liquid Fuel:', 'r.resource[LiquidFuel]', volume_formatter),
+                 ('oxidizermax', 'Max Oxidizer:', 'r.resourceMax[Oxidizer]', volume_formatter),
+                 ('oxidizercurrent', 'Stage Oxidizer:', 'r.resourceCurrent[Oxidizer]', volume_formatter),
+                 ('oxidizertotal', 'Total Oxidizer:', 'r.resource[Oxidizer]', volume_formatter),
+                 ('monopropmax', 'Max Mono Prop.:', 'r.resourceMax[MonoPropellant]', volume_formatter),
+                 ('monopropcurrent', 'Stage Mono Prop.:', 'r.resourceCurrent[MonoPropellant]', volume_formatter),
+                 ('monoproptotal', 'Total Mono Prop.:', 'r.resource[MonoPropellant]', volume_formatter),
+                 ('xenongasmax', 'Max Xenon Gas:', 'r.resourceMax[XenonGas]', volume_formatter),
+                 ('xenongascurrent', 'Stage Xenon Gas:', 'r.resourceCurrent[XenonGas]', volume_formatter),
+                 ('xenongastotal', 'Total Xenon Gas:', 'r.resource[XenonGas]', volume_formatter),
+                 ('intakeairmax', 'Max Intake Air:', 'r.resourceMax[IntakeAir]', float_formatter),
+                 ('intakeaircurrent', 'Stage Intake Air:', 'r.resourceCurrent[IntakeAir]', float_formatter),
+                 ('intakeairtotal', 'Total Intake Air:', 'r.resource[IntakeAir]', float_formatter),
                   ]
 
         def get_data(data, var):
@@ -525,10 +612,10 @@ class SensorInfo(KerminalLivePlotable):
 
     def create(self):
         #widget_id, title, api-var, formatter_func
-        items = [('temperature', 'Thermometer:', 's.sensor.temp', plain_formatter),
-                 ('pressure', 'Barometer:', 's.sensor.pres', plain_formatter),
-                 ('gravity', 'Grav. Detector:', 's.sensor.grav', plain_formatter),
-                 ('acceleration', 'Accelerometer:', 's.sensor.acc', plain_formatter),
+        items = [('temperature', 'Thermometer:', 's.sensor.temp', thermometer_formatter),
+                 ('pressure', 'Barometer:', 's.sensor.pres', barometer_formatter),
+                 ('gravity', 'Grav. Detector:', 's.sensor.grav', gravity_formatter),
+                 ('acceleration', 'Accelerometer:', 's.sensor.acc', accelerometer_formatter),
                   ]
 
         def get_data(data, var):
