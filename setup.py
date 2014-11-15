@@ -26,5 +26,7 @@ setup(name='Kerminal',
       scripts=['scripts/kerminal'],
       license='http://www.gnu.org/licenses/gpl-3.0.html',
       keywords='npyscreen, telemetry, websocket,',
-      install_requires=['autobahn', 'npyscreen', 'docopt']
+      install_requires=['autobahn',
+                        #'npyscreen2',  # Not on PyPI yet; manually install
+                        'docopt']
 )
