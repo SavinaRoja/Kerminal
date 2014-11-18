@@ -53,6 +53,7 @@ if __name__ == '__main__':
                                              level=args['--ui-log'],
                                              max_bytes=100000000,  # 100MB
                                              backup_count=5,
+                                             #filtr='npyscreen2.widgets.gauge',
                                              filtr='npyscreen2.test',
                                              mode='w')
 

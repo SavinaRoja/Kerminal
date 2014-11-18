@@ -2,26 +2,14 @@
 
 import npyscreen2
 from .widgets import SemiInteractiveText
+from .gauges import *
+from .escape_forwarding_containers import EscapeForwardingContainer
 
 import curses
 from functools import partial
 import logging
 
-
-class EscapeForwardingContainer(npyscreen2.Container):
-    def set_up_exit_condition_handlers(self):
-        super(EscapeForwardingContainer, self).set_up_exit_condition_handlers()
-        self.how_exited_handlers.update({'escape': self.h_exit_escape})
-
-
-class EscapeForwardingSmartContainer(EscapeForwardingContainer,
-                                     npyscreen2.SmartContainer):
-    pass
-
-
-class EscapeForwardingGridContainer(EscapeForwardingContainer,
-                                    npyscreen2.GridContainer):
-    pass
+log = logging.getLogger('npyscreen2.test')
 
 
 #MultiLine widgets are likely to be built into npyscreen2 in the future, for now
@@ -102,6 +90,7 @@ class KerminalLivePlotable(EscapeForwardingContainer):
                  parent,
                  header='header',
                  title_length=10,
+                 title_bold=True,
                  margin=1,
                  container_editable_as_widget=True,
                  *args,
@@ -123,7 +112,8 @@ class KerminalLivePlotable(EscapeForwardingContainer):
                                auto_manage=False,
                                editable=False,
                                value=header,
-                               color='Label')
+                               color='Label',
+                               bold=title_bold)
 
     def pre_edit(self):
         self.container_selected = True
@@ -148,17 +138,6 @@ class KerminalLivePlotable(EscapeForwardingContainer):
         for i, widget in enumerate(self.autoables):
             widget.rely = cur_y + i
             widget.relx = self.relx + self.left_margin
-
-    def _resize(self):
-        #self.header.multi_set(rely=self.rely + 1,
-                              #relx=self.relx + 1,
-                              #max_width=self.width - 1,
-                              #max_height=self.height)
-        #self.border.multi_set(rely=self.rely,
-                              #relx=self.relx,
-                              #max_width=self.width,
-                              #max_height=self.height)
-        super(KerminalLivePlotable, self)._resize()
 
 
 #These things should TOTALLY get refactored
@@ -323,7 +302,10 @@ def thermometer_formatter(func, width):
     t = func()
     if t == 'None':
         return r_just.format('N/A')
-    t = float(t.split(',')[1][2:-2])
+    try:
+        t = float(t.split(',')[1][2:-2])
+    except:
+        return 'debugme'
     #Base units are C
     units = 'C'
     t = '{:.2f}'.format(t)
@@ -335,7 +317,10 @@ def barometer_formatter(func, width):
     p = func()
     if p == 'None':
         return r_just.format('N/A')
-    p = float(p.split(',')[1][2:-2])
+    try:
+        p = float(p.split(',')[1][2:-2])
+    except:
+        return 'debugme'
     #Base units are Pa
     units = 'Pa'
     p = '{:.2f}'.format(p)
@@ -347,7 +332,10 @@ def gravity_formatter(func, width):
     g = func()
     if g == 'None':
         return r_just.format('N/A')
-    g = float(g.split(',')[1][2:-2])
+    try:
+        g = float(g.split(',')[1][2:-2])
+    except:
+        return 'debugme'
     #Base units are Pa
     units = 'm/s2'
     g = '{:.2f}'.format(g)
@@ -359,11 +347,15 @@ def accelerometer_formatter(func, width):
     a = func()
     if a == 'None':
         return r_just.format('N/A')
-    a = float(a.split(',')[1][2:-2])
+    try:
+        a = float(a.split(',')[1][2:-2])
+    except:
+        return 'debugme'
     #Base units are Pa
     units = 'Gs'
     a = '{:.2f}'.format(a)
     return r_just.format(' '.join([a, units]))
+
 
 class OrbitalInfo(KerminalLivePlotable):
 
@@ -528,18 +520,16 @@ class TimeInfo(KerminalLivePlotable):
 
 
 class ResourceInfo(KerminalLivePlotable):
-    #These should eventually be given gauge representations
-    #Also can dynamically adjust this widget according to pertinent resource
-    #types by polling Max
     def __init__(self,
                  form,
                  parent,
                  header='Resources',
                  title_length=20,
-                 width=38,
-                 height=20,
+                 width=60,
+                 height=2,
                  *args,
                  **kwargs):
+        self.gauges = []
         super(ResourceInfo, self).__init__(form,
                                           parent,
                                           title_length=title_length,
@@ -550,45 +540,136 @@ class ResourceInfo(KerminalLivePlotable):
                                            **kwargs)
 
     def create(self):
-        #widget_id, title, api-var, formatter_func
-        items = [('electricmax', 'Max Electric:', 'r.resourceMax[ElectricCharge]', charge_formatter),
-                 ('electricurrent', 'Stage Electric:', 'r.resourceCurrent[ElectricCharge]', charge_formatter),
-                 ('electrictotal', 'Total Electric:', 'r.resource[ElectricCharge]', charge_formatter),
-                 ('liquidfuelmax', 'Max Liquid Fuel:', 'r.resourceMax[LiquidFuel]', volume_formatter),
-                 ('liquidfuelcurrent', 'Stage Liquid Fuel:', 'r.resourceCurrent[LiquidFuel]', volume_formatter),
-                 ('liquidfueltotal', 'Current Liquid Fuel:', 'r.resource[LiquidFuel]', volume_formatter),
-                 ('oxidizermax', 'Max Oxidizer:', 'r.resourceMax[Oxidizer]', volume_formatter),
-                 ('oxidizercurrent', 'Stage Oxidizer:', 'r.resourceCurrent[Oxidizer]', volume_formatter),
-                 ('oxidizertotal', 'Total Oxidizer:', 'r.resource[Oxidizer]', volume_formatter),
-                 ('monopropmax', 'Max Mono Prop.:', 'r.resourceMax[MonoPropellant]', volume_formatter),
-                 ('monopropcurrent', 'Stage Mono Prop.:', 'r.resourceCurrent[MonoPropellant]', volume_formatter),
-                 ('monoproptotal', 'Total Mono Prop.:', 'r.resource[MonoPropellant]', volume_formatter),
-                 ('xenongasmax', 'Max Xenon Gas:', 'r.resourceMax[XenonGas]', volume_formatter),
-                 ('xenongascurrent', 'Stage Xenon Gas:', 'r.resourceCurrent[XenonGas]', volume_formatter),
-                 ('xenongastotal', 'Total Xenon Gas:', 'r.resource[XenonGas]', volume_formatter),
-                 ('intakeairmax', 'Max Intake Air:', 'r.resourceMax[IntakeAir]', float_formatter),
-                 ('intakeaircurrent', 'Stage Intake Air:', 'r.resourceCurrent[IntakeAir]', float_formatter),
-                 ('intakeairtotal', 'Total Intake Air:', 'r.resource[IntakeAir]', float_formatter),
-                  ]
+        self.gauges.append(self.add(ElectricChargeGauge,
+                                    widget_id='electriccharge',
+                                    auto_manage=False))
+        self.gauges.append(self.add(LiquidFuelGauge,
+                                    widget_id='liquidfuel',
+                                    auto_manage=False))
+        self.gauges.append(self.add(LiquidFuelStageGauge,
+                                    widget_id='liquidfuelstage',
+                                    auto_manage=False))
+        self.gauges.append(self.add(OxidizerGauge,
+                                    widget_id='oxidizerfuel',
+                                    auto_manage=False))
+        self.gauges.append(self.add(OxidizerStageGauge,
+                                    widget_id='oxidizerstage',
+                                    auto_manage=False))
+        self.gauges.append(self.add(MonopropellantGauge,
+                                    widget_id='monopropellant',
+                                    auto_manage=False))
+        #self.gauges.append(self.add(MonopropellantStageGauge,  #seemed bugged
+                                    #widget_id='monopropellantstage',
+                                    #auto_manage=False))
+        self.gauges.append(self.add(IntakeAirGauge,
+                                    widget_id='intakeair',
+                                    auto_manage=False))
+        self.gauges.append(self.add(XenonGasGauge,
+                                    widget_id='xenongas',
+                                    auto_manage=False))
 
-        def get_data(data, var):
-            return str(data.get(var, ''))
+        def gauge_feed(gauge_display, data):
+            if gauge_display.stage:
+                value = data.get(gauge_display.api_vars['current'])
+                maximum = data.get(gauge_display.api_vars['total'])
+            else:
+                value = data.get(gauge_display.api_vars['total'])
+                maximum = data.get(gauge_display.api_vars['maximum'])
+            if maximum is None:  # This really only applies to Monopropellant
+                gauge_display.gauge.max_val = 1
+                return 0
+            if maximum == 'None' or maximum < 0:  # No capacity for the resource
+                gauge_display.gauge.max_val = 1
+                return 0
+            else:
+                gauge_display.gauge.max_val = float(maximum)
+            if value == 'None':
+                return 0
+            value = float(value)
+            return value
 
-        f_width = self.width - (self.title_length + self.left_margin + self.right_margin + 1)
+        def text_feed(gauge_display, data):
+            if gauge_display.stage:
+                value = data.get(gauge_display.api_vars['current'])
+                maximum = data.get(gauge_display.api_vars['total'])
+            else:
+                value = data.get(gauge_display.api_vars['total'])
+                maximum = data.get(gauge_display.api_vars['maximum'])
+            units = gauge_display.units
+            if maximum is None:  # This really only applies to Monopropellant
+                gauge_display.gauge.max_val = 1
+                return ' N/A '
+            if maximum == 'None':
+                return ' N/A '
+            if value == 'None':
+                value = 0
+            value = float(value)
+            maximum = float(maximum)
+            return '{:.3e}/{:.3e} '.format(value, maximum) + units
 
         data = self.form.parent_app.stream.data
+        sub_manager = self.form.parent_app.stream.subscription_manager
 
-        for key, tit, api, frmt_f in items:
-            self.form.parent_app.stream.subscription_manager.add(api)
-            base_func = partial(get_data, data, api)
-            self.add(npyscreen2.TitledField,
-                     widget_id=key,
-                     field_class=SemiInteractiveText,
-                     title_width=self.title_length,
-                     title_value=tit,
-                     field_value='',
-                     field_feed=partial(frmt_f, base_func, f_width),
-                     editable=False)
+        for gauge in self.gauges:
+            if not gauge.stage:
+                gauge.title.bold = True
+            for api_var in gauge.api_vars.values():
+                sub_manager.add(api_var)
+            gauge.gauge.feed = partial(gauge_feed, gauge, data)
+            gauge.textvalues.feed = partial(text_feed, gauge, data)
+
+    def resize(self):
+        #Resizes itself according to contained items
+        last_height = self.requested_height
+        self.requested_height = (len(list(self.autoables)) * 2) + 2
+        if last_height == self.requested_height:
+            parent_resize = True
+        else:
+            parent_resize = False
+
+        self.header.multi_set(rely=self.rely,
+                              relx=self.relx + 1,
+                              max_width=self.width - 1,
+                              max_height=self.height)
+        self.border.multi_set(rely=self.rely,
+                              relx=self.relx,
+                              max_width=self.width,
+                              max_height=self.height)
+
+        cur_y = self.rely + self.top_margin
+
+        for i, widget in enumerate(self.autoables):
+                widget.rely = cur_y + (i * 2)
+                widget.relx = self.relx + self.left_margin
+
+        if parent_resize:
+            self.parent.resize()
+
+    def update(self):
+        data = self.form.parent_app.stream.data
+        sub_manager = self.form.parent_app.stream.subscription_manager
+        made_modification = False
+        for gauge in self.gauges:
+            resource_max = data.get(gauge.api_vars['maximum'])
+            if resource_max in [None, 'None'] or resource_max < 0:
+                if gauge.live:  # Already down otherwise
+                    sub_manager.drop(gauge.api_vars['current'])
+                    sub_manager.drop(gauge.api_vars['total'])
+                    gauge.live = False
+                    gauge.auto_manage = False
+                    gauge.hidden = True
+                    made_modification = True
+            else:
+                if not gauge.live:  # Already down otherwise
+                    sub_manager.add(gauge.api_vars['current'])
+                    sub_manager.add(gauge.api_vars['total'])
+                    gauge.live = True
+                    gauge.auto_manage = True
+                    gauge.hidden = False
+                    made_modification = True
+        if made_modification:
+            self.resize()
+            self.parent._resize()
 
 
 class SensorInfo(KerminalLivePlotable):

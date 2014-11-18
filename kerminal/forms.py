@@ -5,6 +5,7 @@
 
 from . import __version__
 from .commands import KerminalCommands
+from .escape_forwarding_containers import EscapeForwardingSmartContainer
 from . import containers
 from .widgets import TextCommandBox, KerminalStatusText
 from .utils import launch_text
@@ -13,7 +14,8 @@ import npyscreen2
 
 #import curses
 from functools import partial
-from time import strftime
+
+import logging
 
 from datetime import datetime
 
@@ -22,7 +24,6 @@ def header_feed(thread):
     now = datetime.now()
     status = ' Kerminal v {0} - Sys. Time: {1} '.format(__version__,
                                                         now.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3])
-                                                        #strftime("%Y-%m-%d %H:%M:%S"))
     if thread.connected:
         status += '- Connected: {0} '.format(thread.data.get('v.name'))
     return status
@@ -41,7 +42,7 @@ class KerminalForm(npyscreen2.Form):
                              auto_manage=False, hidden=True)
         self.text.build_contained_from_text(launch_text)
 
-        self.smart = self.add(containers.EscapeForwardingSmartContainer,
+        self.smart = self.add(EscapeForwardingSmartContainer,
                               widget_id='smart',
                               margin=1,
                               editable=True,
@@ -116,6 +117,7 @@ class KerminalForm(npyscreen2.Form):
                                editable=False,
                                value='',
                                feed_reset=True)
+
         self.show_text()
         #self.show_smart()
 

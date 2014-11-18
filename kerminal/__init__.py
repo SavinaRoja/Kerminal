@@ -8,6 +8,7 @@ import logging
 
 log = logging.getLogger('kerminal')
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 from .application import KerminalApp
+

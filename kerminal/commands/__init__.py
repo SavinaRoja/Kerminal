@@ -257,6 +257,22 @@ def quits(args, widget_proxy, form, stream):
     form.parent_app.switch_form_now()
     disconnect(args, widget_proxy, form, stream)
 
+def gauge(args, widget_proxy, form, stream):
+    """\
+    gauge
+
+    Shut down Kerminal.
+
+    Usage:
+      gauge <float> [options]
+
+    Options:
+      -h --help    Show this help message and exit
+    """
+
+    val = float(args['<float>'])
+    form.gauge.gauge.value = val
+
 
 class KerminalCommands(object):
     def __init__(self, form, parent):
@@ -275,6 +291,7 @@ class KerminalCommands(object):
                           'disconnect': disconnect,
                           'haiku': haiku,
                           'help': self.helps,
+                          'gauge': gauge,
                           'log': logs,
                           'rate': rate,
                           'send': send,
