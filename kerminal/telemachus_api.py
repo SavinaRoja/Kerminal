@@ -6,7 +6,6 @@
 
 #Actions are sent to server, result in one action per message
 mj_actions = ['mj.smartassoff',    # Smart ASS Off
-              #'mj.smartasson',     # Why does this not exist?
               'mj.node',           # Node
               'mj.prograde',       # Prograde
               'mj.retrograde',     # Retrograde

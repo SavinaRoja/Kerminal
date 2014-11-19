@@ -3,7 +3,8 @@
 import npyscreen2
 from .widgets import SemiInteractiveText
 from .gauges import *
-from .escape_forwarding_containers import EscapeForwardingContainer
+from .escape_forwarding_containers import EscapeForwardingContainer, \
+                                          EscapeForwardingGridContainer
 
 import curses
 from functools import partial
@@ -28,7 +29,7 @@ class KerminalMultiLineText(EscapeForwardingContainer, npyscreen2.Container):
             self.contained = [w for w in self.contained if not w.auto_manage]
         for line in text.splitlines():
             self.add(SemiInteractiveText,
-                     value=line.strip())
+                     value=line.rstrip())
 
     def set_up_handlers(self):
         super(EscapeForwardingContainer, self).set_up_handlers()
@@ -717,3 +718,182 @@ class SensorInfo(KerminalLivePlotable):
                      field_value='',
                      field_feed=partial(frmt_f, base_func, f_width),
                      editable=False)
+
+
+class ToggleField(npyscreen2.TextField):
+
+    def __init__(self,
+                 form,
+                 parent,
+                 api_var='',
+                 height=1,
+                 width=7,
+                 state=False,
+                 bold=True,
+                 show_cursor=False,
+                 start_cursor_at_end=False,
+                 highlight_color='BUTTON_HIGHLIGHT',
+                 *args,
+                 **kwargs):
+        self.state = state
+        self.api_var = api_var
+        super(ToggleField, self).__init__(form,
+                                          parent,
+                                          bold=bold,
+                                          show_cursor=show_cursor,
+                                          start_cursor_at_end=start_cursor_at_end,
+                                          height=height,
+                                          width=width,
+                                          highlight_color=highlight_color,
+                                          *args,
+                                          **kwargs)
+
+    def set_up_handlers(self):
+        self.handlers = {curses.ascii.NL: self.h_toggle_state,
+                         curses.ascii.CR: self.h_toggle_state,
+                         curses.ascii.TAB: self.h_exit_ascend,
+                         #curses.KEY_BTAB: self.h_exit_up,
+                         curses.KEY_DOWN: self.h_exit_down,
+                         curses.KEY_UP: self.h_exit_up,
+                         curses.KEY_LEFT: self.h_exit_left,
+                         curses.KEY_RIGHT: self.h_exit_right,
+                         "^P": self.h_exit_up,
+                         "^N": self.h_exit_down,
+                         curses.ascii.ESC: self.h_exit_escape,
+                         #curses.KEY_MOUSE: self.h_exit_mouse,
+                         }
+        self.complex_handlers = []
+
+    def pre_edit(self):
+        self.container_selected = True
+        self.highlight = True
+
+    def post_edit(self):
+        self.container_selected = False
+        self.highlight = False
+
+    def h_toggle_state(self, inpt=None):
+        stream = self.form.parent_app.stream
+        if not stream.connected:
+            form.error('Not connected!')
+            return
+        if self.state:
+            msg_dict={'run': [self.api_var + '[True]']}
+        else:
+            msg_dict={'run': [self.api_var + '[False]']}
+        stream.msg_queue.put(msg_dict)
+
+    def update(self):
+        super(ToggleField, self).update()
+        if self.state:
+            self.color = 'BUTTON'
+            self.highlight_color = 'BUTTON_HIGHLIGHT'
+        else:
+            self.color = 'DEFAULT'
+            self.highlight_color = 'HIGHLIGHT'
+
+
+class BooleanToggles(EscapeForwardingGridContainer):
+
+    def __init__(self,
+                 form,
+                 parent,
+                 rows=2,
+                 cols=3,
+                 margin=1,
+                 width=23,
+                 height=4,
+                 header='Buttons',
+                 title_bold=True,
+                 container_editable_as_widget=True,
+                 *args,
+                 **kwargs):
+        super(BooleanToggles, self).__init__(form,
+                                           parent,
+                                           rows=rows,
+                                           cols=cols,
+                                           width=width,
+                                           height=height,
+                                           margin=margin,
+                                           container_editable_as_widget=container_editable_as_widget,
+                                           *args,
+                                           **kwargs)
+
+        self.border = self.add(npyscreen2.BorderBox,
+                               widget_id='border',
+                               auto_manage=False,
+                               editable=False)
+        self.header = self.add(npyscreen2.TextField,
+                               widget_id='header',
+                               auto_manage=False,
+                               editable=False,
+                               value=header,
+                               color='Label',
+                               bold=title_bold)
+
+    def pre_edit(self):
+        self.container_selected = True
+        self.border.highlight = True
+
+    def post_edit(self):
+        self.container_selected = False
+        self.border.highlight = False
+
+    def resize(self):
+        self.header.multi_set(rely=self.rely,
+                              relx=self.relx + 1,
+                              max_width=self.width - 1,
+                              max_height=self.height)
+        self.border.multi_set(rely=self.rely,
+                              relx=self.relx,
+                              max_width=self.width,
+                              max_height=self.height)
+
+    def set_up_handlers(self):
+        super(ButtonHolder, self).set_up_handlers()
+        self.handlers.update({curses.ascii.TAB: self.h_exit_descend})
+
+    def set_up_exit_condition_handlers(self):
+        super(ButtonHolder, self).set_up_exit_condition_handlers()
+        self.how_exited_handlers.update({'ascend': self.activate_container_edit,
+                                         })
+
+    #TODO: Make use of these plotables for the feeds of the buttons
+    #'v.rcsValue'
+    #'v.sasValue'
+    #'v.lightValue'
+    #'v.brakeValue'
+    #'v.gearValue'
+
+    def create(self):
+        self.rcs = self.add(ToggleField,
+                            value='  RCS  ',
+                            api_var='f.rcs',
+                            bold=True,
+                            )
+        self.sas = self.add(ToggleField,
+                            value='  SAS  ',
+                            api_var='f.sas',
+                            bold=True,
+                            )
+        self.gear = self.add(ToggleField,
+                            value=' LGEAR ',
+                            api_var='f.gear',
+                            bold=True,
+                            )
+        self.light = self.add(ToggleField,
+                              value=' LIGHT ',
+                              api_var='f.light',
+                              bold=True,
+                              )
+        self.brake = self.add(ToggleField,
+                              value=' BRAKE ',
+                              api_var='f.brake',
+                              bold=True,
+                              )
+        self.dummy = self.add(ToggleField,
+                              value='',
+                              bold=True,
+                              editable=False
+                              )
+

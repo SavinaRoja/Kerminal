@@ -80,7 +80,7 @@ class SubscriptionManager(object):
             self.put('+', key)
             self.map[key] = 1
 
-    #Naming this "drop" for now to help interfaces straight in my head
+    #Naming this "drop" for now to help keep interfaces straight in my head
     def drop(self, key):
         if key in self.map:  # Seen before
             self.map[key] -= 1
@@ -120,7 +120,7 @@ class TelemachusProtocol(WebSocketClientProtocol):
                                       'p.paused',
                                       't.universalTime',
                                       'v.missionTime'],
-                                #'rate': 1000,
+                                'rate': 200,
                                 })
 
         @asyncio.coroutine

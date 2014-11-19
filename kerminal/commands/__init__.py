@@ -8,51 +8,52 @@ from .. import __version__
 from .logs import logs
 
 from docopt import docopt, DocoptExit
-from functools import wraps, partial
+#from functools import wraps, partial
 import json
 import logging
-import os
+#import os
 import weakref
-import sys
+#import sys
 
-from ..communication import OrderedSet
+#from ..communication import OrderedSet
 
-from ..telemachus_api import orbit_plots_names, plotables , orbit_plotables
+#from ..telemachus_api import orbit_plots_names, plotables , orbit_plotables
 
 log = logging.getLogger('kerminal.commands')
 
 
-#The docstrings for commands follow a modified PEP8! (80 + indent) characters
-#this is to allow conformity of help messages regardless of indent level
+#The docstrings for commands are *functional*, they define how the command may
+#be called and provide the help for the command. As such they are formatted in
+#an unconventional (not PEP8) manner
 def connect(args, widget_proxy, form, stream):
     """\
-    connect
+connect
 
-    Connect to a Telemachus server if not already connected.
+Connect to a Telemachus server if not already connected.
 
-    Usage:
-      connect <host-address> [<port>]
+Usage:
+  connect <host-address> [<port>]
 
-    Arguments:
-      <host-address>    The address of the computer acting as Telemachus server.
-      <port>            The port for the connection. If not supplied, this command
-                        will use the Telemachus default of 8085.
+Arguments:
+  <host-address>    The address of the computer acting as Telemachus server.
+  <port>            The port for the connection. If not supplied, this command
+                    will use the Telemachus default of 8085.
 
-    Discussion and Examples:
+Discussion and Examples:
 
-    If you are using Kerminal on the same computer running Kerbal Space Program and
-    Telemachus, your command will probably use "localhost".
-      "connect localhost [<port>]"
+If you are using Kerminal on the same computer running Kerbal Space Program and
+Telemachus, your command will probably use "localhost".
+  "connect localhost [<port>]"
 
-    If you are connecting to a computer on your local network, you should use your
-    local network address. For some, this address may look like "192.168.1.X".
-      "connect 192.168.1.2 [<port>]"
+If you are connecting to a computer on your local network, you should use your
+local network address. For some, this address may look like "192.168.1.X".
+  "connect 192.168.1.2 [<port>]"
 
-    In order to connect over the internet, you will need to know the IP address of
-    the computer in question. IP addresses may be hard to remember and can change
-    over time, so it is recommended that you use a DNS service (free options exist).
-    One will also likely need to configure port forwarding for the port being used.
-      "connect myserver.domain.com [<port>]"
+In order to connect over the internet, you will need to know the IP address of
+the computer in question. IP addresses may be hard to remember and can change
+over time, so it is recommended that you use a DNS service (free options exist).
+One will also likely need to configure port forwarding for the port being used.
+  "connect myserver.domain.com [<port>]"
     """
 
     log.info('connect command called')
@@ -92,12 +93,12 @@ def connect(args, widget_proxy, form, stream):
 
 def disconnect(args, widget_proxy, form, stream):
     """\
-    disconnect
+disconnect
 
-    Disconnect from the Telemachus server if currently connected.
+Disconnect from the Telemachus server if currently connected.
 
-    Usage:
-      disconnect
+Usage:
+  disconnect
     """
     log.info('disconnect command called')
     if stream.loop is not None:
@@ -113,21 +114,21 @@ def disconnect(args, widget_proxy, form, stream):
 #TODO: Figure out why full unicode support is missing in npyscreen2
 def haiku(args, widget_proxy, form, stream):
     """\
-    haiku
+haiku
 
-    Puts a haiku on the screen.
+Puts a haiku on the screen.
 
-    Usage:
-      haiku
+Usage:
+  haiku
     """
 
     log.info('haiku command called')
 
     haiku = '''
- A field of cotton--
- as if the moon
- had flowered.
- - Matsuo Bashō (松尾 芭蕉)'''
+A field of cotton--
+as if the moon
+had flowered.
+- Matsuo Bashō (松尾 芭蕉)'''
 
     form.show_text(msg=haiku)
 
@@ -138,22 +139,22 @@ def haiku(args, widget_proxy, form, stream):
 
 def rate(args, widget_proxy, form, stream):
     """\
-    rate
+rate
 
-    Change the rate at which Kerminal receives updates from Telemachus
+Change the rate at which Kerminal receives updates from Telemachus
 
-    Usage:
-      rate <interval>
+Usage:
+  rate <interval>
 
-    Arguments:
-      <interval>    The interval length in milliseconds between messages from
-                    Telemachus. Input should be an integer, will be rounded if a
-                    decimal number is used. Divide 1 by this number to get the rate
-                    in Hz.
+Arguments:
+  <interval>    The interval length in milliseconds between messages from
+                Telemachus. Input should be an integer, will be rounded if a
+                decimal number is used. Divide 1 by this number to get the rate
+                in Hz.
 
-    Examples:
-      "rate 200": Kerminal will receive about 5 updates every second.
-      "rate 2000": Kerminal will receive about 1 update every 2 seconds.
+Examples:
+  "rate 200": Kerminal will receive about 5 updates every second.
+  "rate 2000": Kerminal will receive about 1 update every 2 seconds.
     """
     log.info('rate command called')
     if not stream.connected:
@@ -175,20 +176,20 @@ def rate(args, widget_proxy, form, stream):
 
 def send(args, widget_proxy, form, stream):
     """\
-    send
+send
 
-    Send an arbitrary JSON string to the Telemachus server (if connected).
+Send an arbitrary JSON string to the Telemachus server (if connected).
 
-    Usage:
-      send <json-string>
+Usage:
+  send <json-string>
 
-    Being able to send arbitrary API strings during live execution is very handy for
-    development.
+Being able to send arbitrary API strings during live execution is very handy for
+development.
 
-    Examples:
-      send {"+": ["v.altitude", "o.period"]}
-      send {"rate": 2000, "+": ["t.universalTime"]}
-      send {"run": ["f.stage"]}
+Examples:
+  send {"+": ["v.altitude", "o.period"]}
+  send {"rate": 2000, "+": ["t.universalTime"]}
+  send {"run": ["f.stage"]}
     """
 
     log.info('info command called')
@@ -210,45 +211,45 @@ def send(args, widget_proxy, form, stream):
 
 def text(args, widget_proxy, form, stream):
     """\
-    text
+text
 
-    Shows the most recently displayed text on screen
+Shows the most recently displayed text on screen
 
-    Usage:
-      text [options]
+Usage:
+  text [options]
 
-    Options:
-      -h --help    Show this help message and exit
+Options:
+  -h --help    Show this help message and exit
     """
     form.show_text()
 
 
 def telemetry(args, widget_proxy, form, stream):
     """\
-    telemetry
+telemetry
 
-    Brings up the telemetry screen
+Brings up the telemetry screen
 
-    Usage:
-      smart [options]
+Usage:
+  smart [options]
 
-    Options:
-      -h --help    Show this help message and exit
+Options:
+  -h --help    Show this help message and exit
     """
     form.show_smart()
 
 
 def quits(args, widget_proxy, form, stream):
     """\
-    quit
+quit
 
-    Shut down Kerminal.
+Shut down Kerminal.
 
-    Usage:
-      quit [options]
+Usage:
+  quit [options]
 
-    Options:
-      -h --help    Show this help message and exit
+Options:
+  -h --help    Show this help message and exit
     """
 
     log.info('quit command called')
@@ -256,22 +257,6 @@ def quits(args, widget_proxy, form, stream):
     form.parent_app.set_next_form(None)
     form.parent_app.switch_form_now()
     disconnect(args, widget_proxy, form, stream)
-
-def gauge(args, widget_proxy, form, stream):
-    """\
-    gauge
-
-    Shut down Kerminal.
-
-    Usage:
-      gauge <float> [options]
-
-    Options:
-      -h --help    Show this help message and exit
-    """
-
-    val = float(args['<float>'])
-    form.gauge.gauge.value = val
 
 
 class KerminalCommands(object):
@@ -287,11 +272,9 @@ class KerminalCommands(object):
             self.parent = parent
 
         self._commands = {'connect': connect,
-                          #'demo': demo,
                           'disconnect': disconnect,
                           'haiku': haiku,
                           'help': self.helps,
-                          'gauge': gauge,
                           'log': logs,
                           'rate': rate,
                           'send': send,
@@ -326,16 +309,16 @@ class KerminalCommands(object):
 
     def helps(self, args, widget_proxy, form, stream):
         """\
-        help
+help
 
-        Displays available commands with general information, or detailed
-        information on a single command.
+Displays available commands with general information, or detailed
+information on a single command.
 
-        Usage:
-          help [<command>]
+Usage:
+  help [<command>]
 
-        Arguments:
-          <command>       Command whose information should be displayed.
+Arguments:
+  <command>       Command whose information should be displayed.
         """
 
         log.info('help command called')
