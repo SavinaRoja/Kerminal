@@ -725,7 +725,7 @@ class ToggleField(npyscreen2.TextField):
     def __init__(self,
                  form,
                  parent,
-                 api_var='',
+                 api_vars={},
                  height=1,
                  width=7,
                  state=False,
@@ -736,7 +736,7 @@ class ToggleField(npyscreen2.TextField):
                  *args,
                  **kwargs):
         self.state = state
-        self.api_var = api_var
+        self.api_vars = api_vars
         super(ToggleField, self).__init__(form,
                                           parent,
                                           bold=bold,
@@ -778,19 +778,21 @@ class ToggleField(npyscreen2.TextField):
             form.error('Not connected!')
             return
         if self.state:
-            msg_dict={'run': [self.api_var + '[True]']}
+            self.form.info('Sending {msg_off} message'.format(**self.api_vars))
+            msg_dict = {'run': [self.api_vars['send'] + '[False]']}
         else:
-            msg_dict={'run': [self.api_var + '[False]']}
+            self.form.info('Sending {msg_on} message'.format(**self.api_vars))
+            msg_dict = {'run': [self.api_vars['send'] + '[True]']}
         stream.msg_queue.put(msg_dict)
 
     def update(self):
-        super(ToggleField, self).update()
         if self.state:
             self.color = 'BUTTON'
             self.highlight_color = 'BUTTON_HIGHLIGHT'
         else:
             self.color = 'DEFAULT'
             self.highlight_color = 'HIGHLIGHT'
+        super(ToggleField, self).update()
 
 
 class BooleanToggles(EscapeForwardingGridContainer):
@@ -850,50 +852,84 @@ class BooleanToggles(EscapeForwardingGridContainer):
                               max_height=self.height)
 
     def set_up_handlers(self):
-        super(ButtonHolder, self).set_up_handlers()
+        super(BooleanToggles, self).set_up_handlers()
         self.handlers.update({curses.ascii.TAB: self.h_exit_descend})
 
     def set_up_exit_condition_handlers(self):
-        super(ButtonHolder, self).set_up_exit_condition_handlers()
+        super(BooleanToggles, self).set_up_exit_condition_handlers()
         self.how_exited_handlers.update({'ascend': self.activate_container_edit,
                                          })
 
-    #TODO: Make use of these plotables for the feeds of the buttons
-    #'v.rcsValue'
-    #'v.sasValue'
-    #'v.lightValue'
-    #'v.brakeValue'
-    #'v.gearValue'
-
     def create(self):
+        data = self.form.parent_app.stream.data
+        sub_man = self.form.parent_app.stream.subscription_manager
+
+        def toggle_feed(toggle, data):
+            v = data.get(toggle.api_vars['status'])
+            if v in [None, 'None', False, 'False']:
+                toggle.state = False
+            else:
+                toggle.state = True
+            return toggle.value
+
         self.rcs = self.add(ToggleField,
                             value='  RCS  ',
-                            api_var='f.rcs',
+                            api_vars={'send': 'f.rcs',
+                                      'status': 'v.rcsValue',
+                                      'msg_off': 'RCS Off',
+                                      'msg_on': 'RCS On'},
                             bold=True,
                             )
+        sub_man.add(self.rcs.api_vars['status'])
+        self.rcs.feed = partial(toggle_feed, self.rcs, data)
+
         self.sas = self.add(ToggleField,
                             value='  SAS  ',
-                            api_var='f.sas',
+                            api_vars={'send': 'f.sas',
+                                      'status': 'v.sasValue',
+                                      'msg_off': 'SAS Off',
+                                      'msg_on': 'SAS On'},
                             bold=True,
                             )
+        sub_man.add(self.sas.api_vars['status'])
+        self.sas.feed = partial(toggle_feed, self.sas, data)
+
         self.gear = self.add(ToggleField,
                             value=' LGEAR ',
-                            api_var='f.gear',
+                            api_vars={'send': 'f.gear',
+                                      'status': 'v.gearValue',
+                                      'msg_off': 'Gear Up',
+                                      'msg_on': 'Gear Down'},
                             bold=True,
                             )
+        sub_man.add(self.gear.api_vars['status'])
+        self.gear.feed = partial(toggle_feed, self.gear, data)
+
         self.light = self.add(ToggleField,
                               value=' LIGHT ',
-                              api_var='f.light',
+                              api_vars={'send': 'f.light',
+                                        'status': 'v.lightValue',
+                                        'msg_off': 'Lights Off',
+                                        'msg_on': 'Lights On'},
                               bold=True,
                               )
+        sub_man.add(self.light.api_vars['status'])
+        self.light.feed = partial(toggle_feed, self.light, data)
+
         self.brake = self.add(ToggleField,
                               value=' BRAKE ',
-                              api_var='f.brake',
+                              api_vars={'send': 'f.brake',
+                                        'status': 'v.brakeValue',
+                                        'msg_off': 'Brakes Off',
+                                        'msg_on': 'Brakes On'},
                               bold=True,
                               )
-        self.dummy = self.add(ToggleField,
-                              value='',
-                              bold=True,
-                              editable=False
-                              )
+        sub_man.add(self.brake.api_vars['status'])
+        self.brake.feed = partial(toggle_feed, self.brake, data)
+
+        #self.dummy = self.add(ToggleField,
+                              #value='',
+                              #bold=True,
+                              #editable=False
+                              #)
 
