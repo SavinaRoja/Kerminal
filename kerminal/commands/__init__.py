@@ -174,6 +174,32 @@ Examples:
     stream.msg_queue.put({'rate': interval})
 
 
+def rcs(args, widget_proxy, form, stream):
+    """\
+rcs
+
+Enable or disable RCS on the craft
+
+Usage:
+  log ([off | on])
+
+Commands:
+  off    Disable RCS on the craft
+  on     Enable RCS on the craft
+    """
+    if not stream.connected:
+        form.error('Not connected!')
+        return
+
+    if args['on']:
+        stream.msg_queue.put({'run': ['f.rcs[True]']})
+        form.info('Sending RCS On message')
+
+    elif args['off']:
+        stream.msg_queue.put({'run': ['f.rcs[False]']})
+        form.info('Sending RCS Off message')
+
+
 def send(args, widget_proxy, form, stream):
     """\
 send
@@ -277,6 +303,7 @@ class KerminalCommands(object):
                           'help': self.helps,
                           'log': logs,
                           'rate': rate,
+                          'rcs': rcs,
                           'send': send,
                           'text': text,
                           'telemetry': telemetry,
