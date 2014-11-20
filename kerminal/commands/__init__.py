@@ -25,6 +25,91 @@ log = logging.getLogger('kerminal.commands')
 #The docstrings for commands are *functional*, they define how the command may
 #be called and provide the help for the command. As such they are formatted in
 #an unconventional (not PEP8) manner
+def abort(args, widget_proxy, form, stream):
+    """\
+abort
+
+Send a signal to the craft to execute Abort
+
+Usage:
+  abort
+
+Your craft must have an abort action group defined or this will have no effect.
+You may set the abort action during craft construction in either the VAB or SPH.
+    """
+    if not stream.connected:
+        form.error('Not connected!')
+        return
+
+    stream.msg_queue.put({'run': ['f.abort']})
+    form.info('Sending Abort message')
+
+
+def action(args, widget_proxy, form, stream):
+    """\
+action
+
+Send a signal to execute a numbered Action Group command on the craft
+
+Usage:
+  action <number>
+
+Arguments:
+  <number>    Must be an integer from 1 to 10
+
+Your craft must have an action group defined for this number or this command
+will have no effect. You may define custom action groups during craft
+construction in either the VAB or SPH.
+
+Example:
+
+To execute Action Group 5, do:
+  "action 5"
+    """
+    if not stream.connected:
+        form.error('Not connected!')
+        return
+
+    try:
+        group_number = int(args['<number>'])
+    except ValueError:
+        form.error('Action number must be an integer')
+        return
+
+    if 0 <= group_number <= 10:
+        form.error('Action number must be an integer from 1 to 10')
+        return
+
+    stream.msg_queue.put({'run': ['f.ag{}'.format(group_number)]})
+    form.info('Sending Action Group {} message'.format(group_number))
+
+
+def brakes(args, widget_proxy, form, stream):
+    """\
+brakes
+
+Enable or disable the landing gear brakes of the craft
+
+Usage:
+  brakes ([off | on])
+
+Commands:
+  off    Disable the craft's landing gear brakes
+  on     Enable the craft's landing gear brakes
+    """
+    if not stream.connected:
+        form.error('Not connected!')
+        return
+
+    if args['on']:
+        stream.msg_queue.put({'run': ['f.brake[True]']})
+        form.info('Sending Brakes On message')
+
+    elif args['off']:
+        stream.msg_queue.put({'run': ['f.brake[False]']})
+        form.info('Sending Brakes Off message')
+
+
 def connect(args, widget_proxy, form, stream):
     """\
 connect
@@ -111,6 +196,34 @@ Usage:
     form.show_text()
 
 
+def gear(args, widget_proxy, form, stream):
+    """\
+gear
+
+Raise of lower the landing gear of the craft
+
+Usage:
+  gear ([up | down | on | off])
+
+Commands:
+  up      Raise the landing gear on the craft
+  down    Lower the landing gear on the craft
+  on      Synonym for down; lower the landing gear of the craft
+  off     Synonym for up; raise the landing gear of the craft
+    """
+    if not stream.connected:
+        form.error('Not connected!')
+        return
+
+    if args['down'] or args['on']:
+        stream.msg_queue.put({'run': ['f.gear[True]']})
+        form.info('Sending Gear Up message')
+
+    elif args['up'] or args['off']:
+        stream.msg_queue.put({'run': ['f.gear[False]']})
+        form.info('Sending Gear Down message')
+
+
 #TODO: Figure out why full unicode support is missing in npyscreen2
 def haiku(args, widget_proxy, form, stream):
     """\
@@ -132,9 +245,31 @@ had flowered.
 
     form.show_text(msg=haiku)
 
-    #def multiline_feed(widget_instance):
-        #widget_instance.values = haiku.split('\n')
-    #form.main.feed = partial(multiline_feed, form.main)
+
+def lights(args, widget_proxy, form, stream):
+    """\
+lights
+
+Turn the lights of the craft on or off
+
+Usage:
+  lights ([off | on])
+
+Commands:
+  off    Turn the lights of the craft off
+  on     Turn the lights of the craft on
+    """
+    if not stream.connected:
+        form.error('Not connected!')
+        return
+
+    if args['on']:
+        stream.msg_queue.put({'run': ['f.light[True]']})
+        form.info('Sending Lights On message')
+
+    elif args['off']:
+        stream.msg_queue.put({'run': ['f.light[False]']})
+        form.info('Sending Lights Off message')
 
 
 def rate(args, widget_proxy, form, stream):
@@ -181,7 +316,7 @@ rcs
 Enable or disable RCS on the craft
 
 Usage:
-  log ([off | on])
+  rcs ([off | on])
 
 Commands:
   off    Disable RCS on the craft
@@ -198,6 +333,32 @@ Commands:
     elif args['off']:
         stream.msg_queue.put({'run': ['f.rcs[False]']})
         form.info('Sending RCS Off message')
+
+
+def sas(args, widget_proxy, form, stream):
+    """\
+sas
+
+Enable or disable SAS on the craft
+
+Usage:
+  sas ([off | on])
+
+Commands:
+  off    Disable SAS on the craft
+  on     Enable SAS on the craft
+    """
+    if not stream.connected:
+        form.error('Not connected!')
+        return
+
+    if args['on']:
+        stream.msg_queue.put({'run': ['f.sas[True]']})
+        form.info('Sending SAS On message')
+
+    elif args['off']:
+        stream.msg_queue.put({'run': ['f.sas[False]']})
+        form.info('Sending SAS Off message')
 
 
 def send(args, widget_proxy, form, stream):
@@ -235,6 +396,26 @@ Examples:
         stream.msg_queue.put(msg_dict)
 
 
+def stage(args, widget_proxy, form, stream):
+    """\
+stage
+
+Sends a signal to the craft to perform its next stage action
+
+Usage:
+  stage
+
+Options:
+  -h --help    Show this help message and exit
+    """
+    if not stream.connected:
+        form.error('Not connected!')
+        return
+
+    stream.msg_queue.put({'run': ['f.stage']})
+    form.info('Sending Stage message')
+
+
 def text(args, widget_proxy, form, stream):
     """\
 text
@@ -263,6 +444,19 @@ Options:
   -h --help    Show this help message and exit
     """
     form.show_smart()
+
+
+def throttle(args, widget_proxy, form, stream):
+    """\
+throttle
+
+Brings up the telemetry screen
+
+Usage:
+  throttle [full | zero]
+
+
+    """
 
 
 def quits(args, widget_proxy, form, stream):
@@ -297,14 +491,21 @@ class KerminalCommands(object):
         except TypeError:
             self.parent = parent
 
-        self._commands = {'connect': connect,
+        self._commands = {'abort': abort,
+                          'action': action,
+                          'brakes': brakes,
+                          'connect': connect,
                           'disconnect': disconnect,
+                          'gear': gear,
                           'haiku': haiku,
                           'help': self.helps,
+                          'lights': lights,
                           'log': logs,
                           'rate': rate,
                           'rcs': rcs,
+                          'sas': sas,
                           'send': send,
+                          'stage': stage,
                           'text': text,
                           'telemetry': telemetry,
                           'quit': quits,
@@ -350,22 +551,10 @@ Arguments:
 
         log.info('help command called')
 
-        def doc_style(docstring):
-            lines = docstring.splitlines()
-            unindent = len(lines[1]) - len(lines[1].lstrip())
-            new_lines = []
-            for line in lines:
-                if line.startswith(' ' * unindent):
-                    new_lines.append(line[unindent:])
-                else:
-                    new_lines.append(line)
-            return '\n'.join(['  ' + l if l.strip() else l for l in new_lines])
-            #return '\n'.join(['\n'] + new_lines)
-
         if args['<command>']:
             if args['<command>'] not in self._commands:
                 return
-            help_msg = doc_style(self._commands[args['<command>']].__doc__)
+            help_msg = self._commands[args['<command>']].__doc__
         else:
             help_msg = '''\
 Kerminal v {version} Command Listing
@@ -376,27 +565,39 @@ Arguments enclosed in brackets like "[<item>]" are optional; they may have
 defaults or be unnecessary under some circumstances. Type "help <command>" to
 see greater detail about any command.
 
+abort
+ -- Send signal to craft to execute Abort.
+action <number>
+ -- Send signal to craft to execute an Action Group command.
+brakes ([off | on])
+ -- Enable or disable landing gear brakes.
 connect <host-address> [<port>]
  -- Connect to a Telemachus server if not already connected.
 demo
  -- Show a demonstration of data streaming if connected.
 disconnect
  -- Disconnect from the Telemachus server if currently connected.
+gear ([up | down | on | off])
+ -- Raise or lower the landing gear.
 help
  -- Print this help message.
+lights ([off | on])
+ -- Turn the craft's lights on or off.
 log [commands]
  -- Utilities for logging data to file; see "help log" for in depth details.
+rcs ([off | on])
+ -- Enable or disable the craft's RCS.
+sas ([off | on])
+ -- Enable or disable the craft's SAS.
 send <json_string>
  -- Send an arbitrary JSON string to the Telemachus server (if connected).
+stage
+ -- Tell the craft to stage.
 telemetry
- -- Bring up the screen for telemetry information
+ -- Bring up the screen for telemetry information.
 text
- -- Shows the most recent text on screen
+ -- Shows the most recent text on screen.
 quit
  -- Shut down Kerminal.
 '''.format(version=__version__)
         form.show_text(msg=help_msg)
-
-        #def multiline_feed(widget_instance):
-            #widget_instance.values = help_msg.split('\n')
-        #form.main.feed = partial(multiline_feed, form.main)
