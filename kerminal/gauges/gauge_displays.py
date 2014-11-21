@@ -36,7 +36,8 @@ class TitledGauge(EscapeForwardingContainer):
                  **kwargs):
         super(TitledGauge, self).__init__(form,
                                           parent,
-                                          )
+                                          *args,
+                                          **kwargs)
 
         if title_width is None:
             title_width = len(title_value) + 1

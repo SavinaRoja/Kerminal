@@ -640,8 +640,8 @@ class ResourceInfo(KerminalLivePlotable):
         cur_y = self.rely + self.top_margin
 
         for i, widget in enumerate(self.autoables):
-                widget.rely = cur_y + (i * 2)
-                widget.relx = self.relx + self.left_margin
+            widget.rely = cur_y + (i * 2)
+            widget.relx = self.relx + self.left_margin
 
         if parent_resize:
             self.parent.resize()
@@ -671,6 +671,105 @@ class ResourceInfo(KerminalLivePlotable):
         if made_modification:
             self.resize()
             self.parent._resize()
+
+
+class ThrottleInfo(KerminalLivePlotable):
+    def __init__(self,
+                 form,
+                 parent,
+                 header='Throttle',
+                 title_length=20,
+                 width=52,
+                 height=4,
+                 *args,
+                 **kwargs):
+        super(ThrottleInfo, self).__init__(form,
+                                          parent,
+                                          title_length=title_length,
+                                          header=header,
+                                          width=width,
+                                          height=height,
+                                          *args,
+                                           **kwargs)
+
+    def create(self):
+        #self.gauges.append(self.add(ElectricChargeGauge,
+                                    #widget_id='electriccharge',
+                                    #auto_manage=False))
+        sub_manager = self.form.parent_app.stream.subscription_manager
+        sub_manager.add('f.throttle')
+        self.throttle = self.add(ThrottleGauge,
+                                 widget_id='throttle',
+                                 auto_manage=True,
+                                 )
+
+        def gauge_feed(gauge_display, data):
+            value = data.get(gauge_display.api_vars['value'])
+            if value in ['None', None]:
+                return 0
+            return float(value) * 100
+
+        def text_feed(gauge_display, data):
+            value = data.get(gauge_display.api_vars['value'])
+            if value in ['None', None]:
+                return ' N/A '
+            value = float(value) * 100
+            return '{:.2f}'.format(value) + gauge_display.units
+
+        data = self.form.parent_app.stream.data
+
+        self.throttle.gauge.feed = partial(gauge_feed,
+                                           self.throttle,
+                                           data)
+        self.throttle.textvalues.feed = partial(text_feed,
+                                                self.throttle,
+                                                data)
+
+    def resize(self):
+        self.header.multi_set(rely=self.rely,
+                              relx=self.relx + 1,
+                              max_width=self.width - 1,
+                              max_height=self.height)
+        self.border.multi_set(rely=self.rely,
+                              relx=self.relx,
+                              max_width=self.width,
+                              max_height=self.height)
+
+        self.throttle.rely = self.rely + self.top_margin
+        self.throttle.relx = self.relx + self.left_margin
+
+        #self.throttle.multi_set()
+        #cur_y = self.rely + self.top_margin
+
+        #for i, widget in enumerate(self.autoables):
+                #widget.rely = cur_y + (i * 2)
+                #widget.relx = self.relx + self.left_margin
+
+    #def update(self):
+        #data = self.form.parent_app.stream.data
+        #sub_manager = self.form.parent_app.stream.subscription_manager
+        #made_modification = False
+        #for gauge in self.gauges:
+            #resource_max = data.get(gauge.api_vars['maximum'])
+            #if resource_max in [None, 'None'] or resource_max < 0:
+                #if gauge.live:  # Already down otherwise
+                    #sub_manager.drop(gauge.api_vars['current'])
+                    #sub_manager.drop(gauge.api_vars['total'])
+                    #gauge.live = False
+                    #gauge.auto_manage = False
+                    #gauge.hidden = True
+                    #made_modification = True
+            #else:
+                #if not gauge.live:  # Already down otherwise
+                    #sub_manager.add(gauge.api_vars['current'])
+                    #sub_manager.add(gauge.api_vars['total'])
+                    #gauge.live = True
+                    #gauge.auto_manage = True
+                    #gauge.hidden = False
+                    #made_modification = True
+        #if made_modification:
+            #self.resize()
+            #self.parent._resize()
 
 
 class SensorInfo(KerminalLivePlotable):

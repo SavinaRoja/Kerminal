@@ -3,7 +3,7 @@
 __all__ = ['ElectricChargeGauge', 'LiquidFuelGauge', 'LiquidFuelStageGauge',
            'OxidizerGauge', 'OxidizerStageGauge', 'MonopropellantGauge',
            'MonopropellantStageGauge', 'IntakeAirGauge', 'XenonGasGauge',
-           'TitledGauge', 'TitledGaugeWithTextValues']
+           'TitledGauge', 'TitledGaugeWithTextValues', 'ThrottleGauge']
 
 from .gauge_displays import *
 from .resource_gauges import *

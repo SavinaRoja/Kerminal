@@ -22,9 +22,24 @@ import weakref
 log = logging.getLogger('kerminal.commands')
 
 
+from functools import wraps
+
+
+def invalid_if_not_connected(f):
+    @wraps(f)
+    def wrapper(args, widget_proxy, form, stream):
+        if not stream.connected:
+            form.error('Not connected!')
+            return
+        else:
+            return f(args, widget_proxy, form, stream)
+    return wrapper
+
+
 #The docstrings for commands are *functional*, they define how the command may
 #be called and provide the help for the command. As such they are formatted in
 #an unconventional (not PEP8) manner
+@invalid_if_not_connected
 def abort(args, widget_proxy, form, stream):
     """\
 abort
@@ -37,14 +52,12 @@ Usage:
 Your craft must have an abort action group defined or this will have no effect.
 You may set the abort action during craft construction in either the VAB or SPH.
     """
-    if not stream.connected:
-        form.error('Not connected!')
-        return
 
     stream.msg_queue.put({'run': ['f.abort']})
     form.info('Sending Abort message')
 
 
+@invalid_if_not_connected
 def action(args, widget_proxy, form, stream):
     """\
 action
@@ -66,9 +79,6 @@ Example:
 To execute Action Group 5, do:
   "action 5"
     """
-    if not stream.connected:
-        form.error('Not connected!')
-        return
 
     try:
         group_number = int(args['<number>'])
@@ -84,6 +94,7 @@ To execute Action Group 5, do:
     form.info('Sending Action Group {} message'.format(group_number))
 
 
+@invalid_if_not_connected
 def brakes(args, widget_proxy, form, stream):
     """\
 brakes
@@ -97,9 +108,6 @@ Commands:
   off    Disable the craft's landing gear brakes
   on     Enable the craft's landing gear brakes
     """
-    if not stream.connected:
-        form.error('Not connected!')
-        return
 
     if args['on']:
         stream.msg_queue.put({'run': ['f.brake[True]']})
@@ -196,6 +204,7 @@ Usage:
     form.show_text()
 
 
+@invalid_if_not_connected
 def gear(args, widget_proxy, form, stream):
     """\
 gear
@@ -203,7 +212,7 @@ gear
 Raise of lower the landing gear of the craft
 
 Usage:
-  gear ([up | down | on | off])
+  gear (up | down | on | off)
 
 Commands:
   up      Raise the landing gear on the craft
@@ -211,17 +220,14 @@ Commands:
   on      Synonym for down; lower the landing gear of the craft
   off     Synonym for up; raise the landing gear of the craft
     """
-    if not stream.connected:
-        form.error('Not connected!')
-        return
 
     if args['down'] or args['on']:
         stream.msg_queue.put({'run': ['f.gear[True]']})
-        form.info('Sending Gear Up message')
+        form.info('Sending Gear Down message')
 
     elif args['up'] or args['off']:
         stream.msg_queue.put({'run': ['f.gear[False]']})
-        form.info('Sending Gear Down message')
+        form.info('Sending Gear Up message')
 
 
 #TODO: Figure out why full unicode support is missing in npyscreen2
@@ -246,6 +252,7 @@ had flowered.
     form.show_text(msg=haiku)
 
 
+@invalid_if_not_connected
 def lights(args, widget_proxy, form, stream):
     """\
 lights
@@ -253,15 +260,12 @@ lights
 Turn the lights of the craft on or off
 
 Usage:
-  lights ([off | on])
+  lights (off | on)
 
 Commands:
   off    Turn the lights of the craft off
   on     Turn the lights of the craft on
     """
-    if not stream.connected:
-        form.error('Not connected!')
-        return
 
     if args['on']:
         stream.msg_queue.put({'run': ['f.light[True]']})
@@ -272,6 +276,7 @@ Commands:
         form.info('Sending Lights Off message')
 
 
+@invalid_if_not_connected
 def rate(args, widget_proxy, form, stream):
     """\
 rate
@@ -292,9 +297,6 @@ Examples:
   "rate 2000": Kerminal will receive about 1 update every 2 seconds.
     """
     log.info('rate command called')
-    if not stream.connected:
-        form.error('Not connected!')
-        return
 
     try:
         interval = int(args['<interval>'])
@@ -309,6 +311,7 @@ Examples:
     stream.msg_queue.put({'rate': interval})
 
 
+@invalid_if_not_connected
 def rcs(args, widget_proxy, form, stream):
     """\
 rcs
@@ -316,15 +319,12 @@ rcs
 Enable or disable RCS on the craft
 
 Usage:
-  rcs ([off | on])
+  rcs (off | on)
 
 Commands:
   off    Disable RCS on the craft
   on     Enable RCS on the craft
     """
-    if not stream.connected:
-        form.error('Not connected!')
-        return
 
     if args['on']:
         stream.msg_queue.put({'run': ['f.rcs[True]']})
@@ -342,7 +342,7 @@ sas
 Enable or disable SAS on the craft
 
 Usage:
-  sas ([off | on])
+  sas (off | on)
 
 Commands:
   off    Disable SAS on the craft
@@ -361,6 +361,7 @@ Commands:
         form.info('Sending SAS Off message')
 
 
+@invalid_if_not_connected
 def send(args, widget_proxy, form, stream):
     """\
 send
@@ -381,9 +382,6 @@ Examples:
 
     log.info('info command called')
 
-    if not stream.connected:
-        form.error('Not connected!')
-        return
     msg = args['<json-string>']
     log.debug(msg)
     try:
@@ -396,6 +394,7 @@ Examples:
         stream.msg_queue.put(msg_dict)
 
 
+@invalid_if_not_connected
 def stage(args, widget_proxy, form, stream):
     """\
 stage
@@ -408,9 +407,6 @@ Usage:
 Options:
   -h --help    Show this help message and exit
     """
-    if not stream.connected:
-        form.error('Not connected!')
-        return
 
     stream.msg_queue.put({'run': ['f.stage']})
     form.info('Sending Stage message')
@@ -446,17 +442,65 @@ Options:
     form.show_smart()
 
 
+@invalid_if_not_connected
 def throttle(args, widget_proxy, form, stream):
     """\
 throttle
 
-Brings up the telemetry screen
+Adjust the throttle value on the craft
 
 Usage:
-  throttle [full | zero]
+  throttle (full | zero | up | down | <percent>)
 
+Commands:
+  full           Set the throttle to 100%, same as "throttle set 100"
+  zero           Set the throttle to 0%, same as "throttle set 0"
+  up             Increase the throttle by 10%
+  down           Decrease the throttle by 10%
 
+Arguments:
+  <percent>      Set the throttle to the specified percentage
     """
+
+    #Still have to decide how throttle subscription will be handled
+    #current_throttle = stream.data.get('f.throttle')
+    #if current_throttle in ['None', None]:
+        #current_throttle = None
+    #else:
+        #current_throttle = current_throttle * 100
+
+    if args['full']:
+        stream.msg_queue.put({'run': ['f.throttleFull']})
+        form.info('Setting throttle to 100%')
+    elif args['zero']:
+        stream.msg_queue.put({'run': ['f.throttleZero']})
+        form.info('Setting throttle to 0%')
+    elif args['up']:
+        #if current_throttle is not None:
+            #if current_throttle > 90.0:
+                #stream.msg_queue.put({'run': ['f.throttleUp']})
+                #form.warning('Throttle could not be increased higher than 100%')
+        stream.msg_queue.put({'run': ['f.throttleUp']})
+        form.info('Increasing throttle by 10%')
+    elif args['down']:
+        stream.msg_queue.put({'run': ['f.throttleDown']})
+        form.info('Decreasing throttle by 10%')
+    elif args['set']:
+        try:
+            value = float(args['<percent>'])
+        except ValueError:
+            form.error('Set Throttle value must be a number')
+            return
+        if value < 0:
+            stream.msg_queue.put({'run': ['f.setThrottle[0.0]']})
+            form.warning('Setting throttle to 0%, cannot go lower!')
+        elif value > 100:
+            stream.msg_queue.put({'run': ['f.setThrottle[1.0]']})
+            form.warning('Setting throttle to 100%, cannot go higher!')
+        else:
+            mag = value / 100
+            stream.msg_queue.put({'run': ['f.setThrottle[{}]'.format(mag)]})
+            form.info('Setting throttle to {}%'.format(value))
 
 
 def quits(args, widget_proxy, form, stream):
@@ -508,6 +552,7 @@ class KerminalCommands(object):
                           'stage': stage,
                           'text': text,
                           'telemetry': telemetry,
+                          'throttle': throttle,
                           'quit': quits,
                           'exit': quits}
 
@@ -525,7 +570,8 @@ class KerminalCommands(object):
             try:
                 args = docopt(command_func.__doc__,
                               version='Kerminal v {0}'.format(__version__),
-                              argv=argv)
+                              argv=argv,
+                              options_first=True)  # Allow negative numbers
             except DocoptExit as e:
                 self.form.error('command usage incorrect. See "help {0}"'.format(command))
                 log.debug(e)
@@ -569,25 +615,23 @@ abort
  -- Send signal to craft to execute Abort.
 action <number>
  -- Send signal to craft to execute an Action Group command.
-brakes ([off | on])
+brakes (off | on)
  -- Enable or disable landing gear brakes.
 connect <host-address> [<port>]
  -- Connect to a Telemachus server if not already connected.
-demo
- -- Show a demonstration of data streaming if connected.
 disconnect
  -- Disconnect from the Telemachus server if currently connected.
-gear ([up | down | on | off])
+gear (up | down | on | off)
  -- Raise or lower the landing gear.
 help
  -- Print this help message.
-lights ([off | on])
+lights (off | on)
  -- Turn the craft's lights on or off.
 log [commands]
  -- Utilities for logging data to file; see "help log" for in depth details.
-rcs ([off | on])
+rcs (off | on)
  -- Enable or disable the craft's RCS.
-sas ([off | on])
+sas (off | on)
  -- Enable or disable the craft's SAS.
 send <json_string>
  -- Send an arbitrary JSON string to the Telemachus server (if connected).
@@ -597,6 +641,8 @@ telemetry
  -- Bring up the screen for telemetry information.
 text
  -- Shows the most recent text on screen.
+throttle (full | zero | up | down | set <percent>)
+ -- Set the throttle of the craft
 quit
  -- Shut down Kerminal.
 '''.format(version=__version__)

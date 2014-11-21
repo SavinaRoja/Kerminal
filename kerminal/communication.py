@@ -14,7 +14,7 @@ from autobahn.asyncio.websocket import WebSocketClientProtocol,\
                                        WebSocketClientFactory
 
 log = logging.getLogger('kerminal.communication')
-log.setLevel(logging.DEBUG)
+#log.setLevel(logging.DEBUG)
 
 #Initialize all plotable variables in the dict
 global LIVE_DATA

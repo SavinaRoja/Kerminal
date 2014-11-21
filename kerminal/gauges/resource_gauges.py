@@ -5,7 +5,8 @@ from . import TitledGaugeWithTextValues
 
 __all__ = ['ElectricChargeGauge', 'LiquidFuelGauge', 'LiquidFuelStageGauge',
            'OxidizerGauge', 'OxidizerStageGauge', 'MonopropellantGauge',
-           'MonopropellantStageGauge', 'IntakeAirGauge', 'XenonGasGauge']
+           'MonopropellantStageGauge', 'IntakeAirGauge', 'XenonGasGauge',
+           'ThrottleGauge']
 
 
 class ElectricChargeGauge(TitledGaugeWithTextValues):
@@ -14,7 +15,7 @@ class ElectricChargeGauge(TitledGaugeWithTextValues):
                  parent,
                  height=2,
                  title_value='Electric Charge:',
-                 text_width=22,
+                 text_width=23,
                  text_theme='LABEL',
                  text_feed=None,
                  units='Wh',
@@ -228,7 +229,7 @@ class XenonGasGauge(TitledGaugeWithTextValues):
                  parent,
                  height=2,
                  title_value='Xenon Gas:',
-                 text_width=22,
+                 text_width=23,
                  text_theme='LABEL',
                  text_feed=None,
                  units='hg',
@@ -253,3 +254,32 @@ class XenonGasGauge(TitledGaugeWithTextValues):
                                               gauge_themes=['DANGER', 'CAUTION', 'SAFE'],
                                               *args,
                                               **kwargs)
+
+
+class ThrottleGauge(TitledGaugeWithTextValues):
+    def __init__(self,
+                 form,
+                 parent,
+                 height=2,
+                 title_value='Throttle:',
+                 text_width=11,
+                 text_theme='LABEL',
+                 text_feed=None,
+                 units='%',
+                 api_vars={'value': 'f.throttle'},
+                 *args,
+                 **kwargs):
+
+        self.units = units
+        self.api_vars = api_vars
+
+        super(ThrottleGauge, self).__init__(form,
+                                            parent,
+                                            height=height,
+                                            title_value=title_value,
+                                            text_width=text_width,
+                                            text_theme='LABEL',
+                                            gauge_theme_breakpoints=[],
+                                            gauge_themes=['COOLINVERSE'],
+                                            *args,
+                                            **kwargs)
