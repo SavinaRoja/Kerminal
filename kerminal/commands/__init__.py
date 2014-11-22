@@ -205,6 +205,64 @@ Usage:
 
 
 @invalid_if_not_connected
+def fbw(args, widget_proxy, form, stream):
+    """\
+fbw
+
+Enable, disable, and set the Telemachus FlyByWire control system
+
+Usage:
+  fbw (on | off)
+  fbw [--yaw=<magnitude>] [--roll=<magnitude>] [--pitch=<magnitude>]
+
+Options:
+  -y --yaw=<magnitude>      Set a new value for yaw
+  -r --roll=<magnitude>     Set a new value for roll
+  -p --pitch=<magnitude>    Set a new value for pitch
+
+Commands:
+  on     Enable FlyByWire
+  off    Disable FlyByWire
+"""
+    if args['on']:
+        stream.msg_queue.put({'run': ['v.setFbW[1]']})
+        form.info('Sending Activate FlyByWire message')
+        return
+    elif args['off']:
+        stream.msg_queue.put({'run': ['v.setFbW[0]']})
+        form.info('Sending Deactivate FlyByWire message')
+        return
+
+    actions = []
+    if args['--yaw'] is not None:
+        try:
+            yaw = float(args['--yaw'])
+        except ValueError:
+            form.error('Value for yaw must be a number')
+        else:
+            actions.append('v.setYaw[{}]'.format(yaw))
+    if args['--roll'] is not None:
+        try:
+            roll = float(args['--roll'])
+        except ValueError:
+            form.error('Value for roll must be a number')
+        else:
+            actions.append('v.setRoll[{}]'.format(roll))
+    if args['--pitch'] is not None:
+        try:
+            pitch = float(args['--pitch'])
+        except ValueError:
+            form.error('Value for pitch must be a number')
+        else:
+            actions.append('v.setPitch[{}]'.format(pitch))
+
+    if not actions:
+        form.error('fbw command received no instructions!')
+    else:
+        stream.msg_queue.put({'run': actions})
+
+
+@invalid_if_not_connected
 def gear(args, widget_proxy, form, stream):
     """\
 gear
@@ -453,8 +511,8 @@ Usage:
   throttle (full | zero | up | down | <percent>)
 
 Commands:
-  full           Set the throttle to 100%, same as "throttle set 100"
-  zero           Set the throttle to 0%, same as "throttle set 0"
+  full           Set the throttle to 100%, same as "throttle 100"
+  zero           Set the throttle to 0%, same as "throttle 0"
   up             Increase the throttle by 10%
   down           Decrease the throttle by 10%
 
@@ -540,6 +598,7 @@ class KerminalCommands(object):
                           'brakes': brakes,
                           'connect': connect,
                           'disconnect': disconnect,
+                          'fbw': fbw,
                           'gear': gear,
                           'haiku': haiku,
                           'help': self.helps,
@@ -565,15 +624,16 @@ class KerminalCommands(object):
                 return
             command_func = self._commands.get(command)
             if command_func is None:
-                self.form.error('command "{0}" not recognized. See "help"'.format(command))
+                self.form.error('command "{}" not recognized. See "help"'.format(command))
                 return
             try:
                 args = docopt(command_func.__doc__,
-                              version='Kerminal v {0}'.format(__version__),
+                              version='Kerminal v {}'.format(__version__),
                               argv=argv,
-                              options_first=True)  # Allow negative numbers
+                              options_first=True
+                              )  # Allow negative numbers as arguments in options
             except DocoptExit as e:
-                self.form.error('command usage incorrect. See "help {0}"'.format(command))
+                self.form.error('command usage incorrect. See "help {}"'.format(command))
                 log.debug(e)
             else:
                 command_func(args,
@@ -641,7 +701,7 @@ telemetry
  -- Bring up the screen for telemetry information.
 text
  -- Shows the most recent text on screen.
-throttle (full | zero | up | down | set <percent>)
+throttle (full | zero | up | down | <percent>)
  -- Set the throttle of the craft
 quit
  -- Shut down Kerminal.

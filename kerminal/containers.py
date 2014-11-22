@@ -425,7 +425,7 @@ class SurfaceInfo(KerminalLivePlotable):
                  header='Surface Info',
                  title_length=19,
                  width=36,
-                 height=10,
+                 height=13,
                  *args,
                  **kwargs):
         super(SurfaceInfo, self).__init__(form,
@@ -450,6 +450,9 @@ class SurfaceInfo(KerminalLivePlotable):
                  ('pitch', 'Pitch:', 'n.pitch', degree_formatter),
                  ('heading', 'Heading:', 'n.heading', degree_formatter),
                  ('roll', 'Roll:', 'n.roll', degree_formatter),
+                 ('rawpitch', 'Raw Pitch:', 'n.rawpitch', degree_formatter),
+                 ('rawheading', 'Raw Heading:', 'n.rawheading', degree_formatter),
+                 ('rawroll', 'Raw Roll:', 'n.rawroll', degree_formatter),
                  ('latitude', 'Latitude:', 'v.lat', plain_formatter),
                  ('longitude', 'Longitude:', 'v.long', float_formatter),
                  ]
@@ -542,32 +545,23 @@ class ResourceInfo(KerminalLivePlotable):
 
     def create(self):
         self.gauges.append(self.add(ElectricChargeGauge,
-                                    widget_id='electriccharge',
-                                    auto_manage=False))
+                                    widget_id='electriccharge',))
         self.gauges.append(self.add(LiquidFuelGauge,
-                                    widget_id='liquidfuel',
-                                    auto_manage=False))
+                                    widget_id='liquidfuel',))
         self.gauges.append(self.add(LiquidFuelStageGauge,
-                                    widget_id='liquidfuelstage',
-                                    auto_manage=False))
+                                    widget_id='liquidfuelstage',))
         self.gauges.append(self.add(OxidizerGauge,
-                                    widget_id='oxidizerfuel',
-                                    auto_manage=False))
+                                    widget_id='oxidizerfuel',))
         self.gauges.append(self.add(OxidizerStageGauge,
-                                    widget_id='oxidizerstage',
-                                    auto_manage=False))
+                                    widget_id='oxidizerstage',))
         self.gauges.append(self.add(MonopropellantGauge,
-                                    widget_id='monopropellant',
-                                    auto_manage=False))
+                                    widget_id='monopropellant',))
         #self.gauges.append(self.add(MonopropellantStageGauge,  #seemed bugged
-                                    #widget_id='monopropellantstage',
-                                    #auto_manage=False))
+                                    #widget_id='monopropellantstage',))
         self.gauges.append(self.add(IntakeAirGauge,
-                                    widget_id='intakeair',
-                                    auto_manage=False))
+                                    widget_id='intakeair',))
         self.gauges.append(self.add(XenonGasGauge,
-                                    widget_id='xenongas',
-                                    auto_manage=False))
+                                    widget_id='xenongas',))
 
         def gauge_feed(gauge_display, data):
             if gauge_display.stage:
@@ -622,7 +616,7 @@ class ResourceInfo(KerminalLivePlotable):
     def resize(self):
         #Resizes itself according to contained items
         last_height = self.requested_height
-        self.requested_height = (len(list(self.autoables)) * 2) + 2
+        self.requested_height = (len(list(self.autoables)) + 1) * 2
         if last_height == self.requested_height:
             parent_resize = True
         else:
@@ -637,16 +631,20 @@ class ResourceInfo(KerminalLivePlotable):
                               max_width=self.width,
                               max_height=self.height)
 
+        log = logging.getLogger('npyscreen2.test')
+        log.debug('self.rely={}, self.relx={}, self.top_margin={}'.format(self.rely, self.relx, self.top_margin))
         cur_y = self.rely + self.top_margin
 
         for i, widget in enumerate(self.autoables):
             widget.rely = cur_y + (i * 2)
+            log.debug(widget.rely)
             widget.relx = self.relx + self.left_margin
 
         if parent_resize:
             self.parent.resize()
 
     def update(self):
+        log = logging.getLogger('npyscreen2.test')
         data = self.form.parent_app.stream.data
         sub_manager = self.form.parent_app.stream.subscription_manager
         made_modification = False
@@ -654,6 +652,7 @@ class ResourceInfo(KerminalLivePlotable):
             resource_max = data.get(gauge.api_vars['maximum'])
             if resource_max in [None, 'None'] or resource_max < 0:
                 if gauge.live:  # Already down otherwise
+                    log.debug('dismissing widget')
                     sub_manager.drop(gauge.api_vars['current'])
                     sub_manager.drop(gauge.api_vars['total'])
                     gauge.live = False
@@ -661,7 +660,8 @@ class ResourceInfo(KerminalLivePlotable):
                     gauge.hidden = True
                     made_modification = True
             else:
-                if not gauge.live:  # Already down otherwise
+                if not gauge.live:  # Already up otherwise
+                    log.debug('recalling widget')
                     sub_manager.add(gauge.api_vars['current'])
                     sub_manager.add(gauge.api_vars['total'])
                     gauge.live = True

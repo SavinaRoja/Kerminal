@@ -48,6 +48,10 @@ class KerminalForm(npyscreen2.Form):
                               editable=True,
                               auto_manage=False)
 
+        self.smart.add(containers.ResourceInfo,
+                       widget_id='resource0')
+        self.smart.add(containers.ThrottleInfo,
+                       widget_it='throttle0')
         self.smart.add(containers.OrbitalInfo,
                        widget_id='orbit0')
 
@@ -57,17 +61,11 @@ class KerminalForm(npyscreen2.Form):
         self.smart.add(containers.TimeInfo,
                        widget_id='time0')
 
-        self.smart.add(containers.ResourceInfo,
-                       widget_id='resource0')
-
         self.smart.add(containers.SensorInfo,
                        widget_id='sensor0')
 
         self.smart.add(containers.BooleanToggles,
                        widget_id='buttons0')
-
-        self.smart.add(containers.ThrottleInfo,
-                       widget_it='throttle0')
 
         self.top_bar = self.add(npyscreen2.BorderBox,
                                 widget_id='top_bar',
@@ -189,11 +187,11 @@ class KerminalForm(npyscreen2.Form):
     def resize(self):
         self.text.multi_set(rely=self.rely + 1,
                             relx=self.relx,
-                            max_height=self.height - 4,
+                            max_height=self.height - 3,
                             max_width=self.width)
         self.smart.multi_set(rely=self.rely + 1,
                              relx=self.relx,
-                             max_height=self.height - 4,
+                             max_height=self.height - 3,
                              max_width=self.width)
         self.top_bar.multi_set(rely=self.rely,
                                relx=self.relx,
