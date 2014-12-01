@@ -393,6 +393,7 @@ Commands:
         form.info('Sending RCS Off message')
 
 
+@invalid_if_not_connected
 def sas(args, widget_proxy, form, stream):
     """\
 sas
@@ -543,7 +544,7 @@ Arguments:
     elif args['down']:
         stream.msg_queue.put({'run': ['f.throttleDown']})
         form.info('Decreasing throttle by 10%')
-    elif args['set']:
+    elif args['<percent>']:
         try:
             value = float(args['<percent>'])
         except ValueError:
@@ -681,6 +682,8 @@ connect <host-address> [<port>]
  -- Connect to a Telemachus server if not already connected.
 disconnect
  -- Disconnect from the Telemachus server if currently connected.
+fbw (on | off | [--yaw=<magnitude>] [--roll=<magnitude>] [--pitch=<magnitude>]))
+ -- Utilize the Telemachus FlyByWire system. Not well suited to this interface!
 gear (up | down | on | off)
  -- Raise or lower the landing gear.
 help
