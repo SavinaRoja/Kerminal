@@ -130,4 +130,4 @@ Comments:
         signal = 'mj.parallelminus'
 
     stream.msg_queue.put({'run': [signal]})
-    stream.add_callback(partial(mj_callback, signal))
+    stream.add_callback(partial(mj_callback, form, signal))

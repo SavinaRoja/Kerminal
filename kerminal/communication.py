@@ -159,7 +159,6 @@ class TelemachusProtocol(WebSocketClientProtocol):
 
     def onMessage(self, payload, isBinary):
         #The Telemachus server should never send binary data, but just in case
-        log = logging.getLogger('npyscreen2.test2')
         if isBinary:
             log.debug('Received binary data: {0}'.format(payload))
         else:
@@ -173,18 +172,14 @@ class TelemachusProtocol(WebSocketClientProtocol):
             else:
                 msg['sys.time'] = time.time()
                 log.debug('Message Received: {0}'.format(msg))
-            #The client subscribes to p.paused on connection, it should always
-            #be present and is exempt from subscription management
-            #When the game is paused, Kerminal will act as though it has not
-            #received the message.
-            #if not msg['p.paused']:
-            global LIVE_DATA
+
             global CALLBACKS
-            if 'mj.surface2' in msg:
-                log.warning(str(msg))
+            #Callbacks should generally pop their key out of the message
             for callback in CALLBACKS:
                 callback(msg)
             CALLBACKS = []
+
+            global LIVE_DATA
             LIVE_DATA.update(msg)
             #Logging stuff
             global DATA_LOG_ON, DATA_LOG_VARS, DATA_LOG_FILE
@@ -201,9 +196,6 @@ class TelemachusProtocol(WebSocketClientProtocol):
                 if self.data_log is not None:
                     self.data_log.close()
                     self.data_log = None
-            #else:
-                #global LIVE_DATA
-                #LIVE_DATA.update({'p.paused': msg['p.paused']})
 
     def onError(self, *args):
         log.debug('Error: {0}'.format(args))
