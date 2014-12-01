@@ -54,7 +54,7 @@ if __name__ == '__main__':
                                              max_bytes=100000000,  # 100MB
                                              backup_count=5,
                                              #filtr='npyscreen2.widgets.gauge',
-                                             filtr='npyscreen2.test',
+                                             filtr='npyscreen2.test2',
                                              mode='w')
 
     app = KerminalApp()

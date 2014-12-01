@@ -10,7 +10,7 @@ import curses
 from functools import partial
 import logging
 
-log = logging.getLogger('npyscreen2.test')
+#log = logging.getLogger('npyscreen2.test')
 
 
 #MultiLine widgets are likely to be built into npyscreen2 in the future, for now
@@ -631,20 +631,20 @@ class ResourceInfo(KerminalLivePlotable):
                               max_width=self.width,
                               max_height=self.height)
 
-        log = logging.getLogger('npyscreen2.test')
-        log.debug('self.rely={}, self.relx={}, self.top_margin={}'.format(self.rely, self.relx, self.top_margin))
+        #log = logging.getLogger('npyscreen2.test')
+        #log.debug('self.rely={}, self.relx={}, self.top_margin={}'.format(self.rely, self.relx, self.top_margin))
         cur_y = self.rely + self.top_margin
 
         for i, widget in enumerate(self.autoables):
             widget.rely = cur_y + (i * 2)
-            log.debug(widget.rely)
+            #log.debug(widget.rely)
             widget.relx = self.relx + self.left_margin
 
         if parent_resize:
             self.parent.resize()
 
     def update(self):
-        log = logging.getLogger('npyscreen2.test')
+        #log = logging.getLogger('npyscreen2.test')
         data = self.form.parent_app.stream.data
         sub_manager = self.form.parent_app.stream.subscription_manager
         made_modification = False
@@ -652,7 +652,7 @@ class ResourceInfo(KerminalLivePlotable):
             resource_max = data.get(gauge.api_vars['maximum'])
             if resource_max in [None, 'None'] or resource_max < 0:
                 if gauge.live:  # Already down otherwise
-                    log.debug('dismissing widget')
+                    #log.debug('dismissing widget')
                     sub_manager.drop(gauge.api_vars['current'])
                     sub_manager.drop(gauge.api_vars['total'])
                     gauge.live = False
@@ -661,7 +661,7 @@ class ResourceInfo(KerminalLivePlotable):
                     made_modification = True
             else:
                 if not gauge.live:  # Already up otherwise
-                    log.debug('recalling widget')
+                    #log.debug('recalling widget')
                     sub_manager.add(gauge.api_vars['current'])
                     sub_manager.add(gauge.api_vars['total'])
                     gauge.live = True

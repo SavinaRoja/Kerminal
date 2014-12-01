@@ -23,6 +23,8 @@ LIVE_DATA = {k: 'None' for k in plotables}
 global MSG_QUEUE
 MSG_QUEUE = queue.Queue()
 
+global CALLBACKS
+CALLBACKS = []
 
 from .utils import OrderedSet
 
@@ -98,6 +100,10 @@ DATA_LOG_FILE = 'kerminaldata.csv'
 
 class TelemachusProtocol(WebSocketClientProtocol):
 
+    #def __init__(self, *args, **kwargs):
+        #super(TelemachusProtocol, self).__init__(*args, **kwargs)
+        #self.callbacks = []
+
     def send_json_message(self, message_dict):
         """
         This method renders the dictionary to a string appropriately for
@@ -153,6 +159,7 @@ class TelemachusProtocol(WebSocketClientProtocol):
 
     def onMessage(self, payload, isBinary):
         #The Telemachus server should never send binary data, but just in case
+        log = logging.getLogger('npyscreen2.test2')
         if isBinary:
             log.debug('Received binary data: {0}'.format(payload))
         else:
@@ -170,27 +177,33 @@ class TelemachusProtocol(WebSocketClientProtocol):
             #be present and is exempt from subscription management
             #When the game is paused, Kerminal will act as though it has not
             #received the message.
-            if not msg['p.paused']:
-                global LIVE_DATA
-                LIVE_DATA.update(msg)
-                #Logging stuff
-                global DATA_LOG_ON, DATA_LOG_VARS, DATA_LOG_FILE
-                if DATA_LOG_ON:  # Logging is enabled
-                    #If self.data_log is None, but DATA_LOG_ON is True, then
-                    #logging was just enabled and we need to open the file and
-                    #write the headers
-                    if self.data_log is None:
-                        self.data_log = open(DATA_LOG_FILE, 'a', -1)
-                        self.data_log.write(';'.join(DATA_LOG_VARS) + '\n')
-                    #Write the log vars to the file
-                    self.data_log.write(';'.join([str(LIVE_DATA[v]) for v in DATA_LOG_VARS]) + '\n')
-                else:
-                    if self.data_log is not None:
-                        self.data_log.close()
-                        self.data_log = None
+            #if not msg['p.paused']:
+            global LIVE_DATA
+            global CALLBACKS
+            if 'mj.surface2' in msg:
+                log.warning(str(msg))
+            for callback in CALLBACKS:
+                callback(msg)
+            CALLBACKS = []
+            LIVE_DATA.update(msg)
+            #Logging stuff
+            global DATA_LOG_ON, DATA_LOG_VARS, DATA_LOG_FILE
+            if DATA_LOG_ON:  # Logging is enabled
+                #If self.data_log is None, but DATA_LOG_ON is True, then
+                #logging was just enabled and we need to open the file and
+                #write the headers
+                if self.data_log is None:
+                    self.data_log = open(DATA_LOG_FILE, 'a', -1)
+                    self.data_log.write(';'.join(DATA_LOG_VARS) + '\n')
+                #Write the log vars to the file
+                self.data_log.write(';'.join([str(LIVE_DATA[v]) for v in DATA_LOG_VARS]) + '\n')
             else:
-                global LIVE_DATA
-                LIVE_DATA.update({'p.paused': msg['p.paused']})
+                if self.data_log is not None:
+                    self.data_log.close()
+                    self.data_log = None
+            #else:
+                #global LIVE_DATA
+                #LIVE_DATA.update({'p.paused': msg['p.paused']})
 
     def onError(self, *args):
         log.debug('Error: {0}'.format(args))
@@ -313,3 +326,7 @@ class CommsThread(threading.Thread):
             self.make_connection.wait()
             self.init_loop()
             self.connect()  # this blocks
+
+    def add_callback(self, callback_func):
+        global CALLBACKS
+        CALLBACKS.append(callback_func)
