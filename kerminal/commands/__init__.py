@@ -509,36 +509,18 @@ throttle
 Adjust the throttle value on the craft
 
 Usage:
-  throttle (full | zero | up | down | <percent>)
-
-Commands:
-  full           Set the throttle to 100%, same as "throttle 100"
-  zero           Set the throttle to 0%, same as "throttle 0"
-  up             Increase the throttle by 10%
-  down           Decrease the throttle by 10%
+  throttle (up | down)
+  throttle <percent>
 
 Arguments:
   <percent>      Set the throttle to the specified percentage
+
+Commands:
+  up             Increase the throttle by 10%
+  down           Decrease the throttle by 10%
     """
 
-    #Still have to decide how throttle subscription will be handled
-    #current_throttle = stream.data.get('f.throttle')
-    #if current_throttle in ['None', None]:
-        #current_throttle = None
-    #else:
-        #current_throttle = current_throttle * 100
-
-    if args['full']:
-        stream.msg_queue.put({'run': ['f.throttleFull']})
-        form.info('Setting throttle to 100%')
-    elif args['zero']:
-        stream.msg_queue.put({'run': ['f.throttleZero']})
-        form.info('Setting throttle to 0%')
-    elif args['up']:
-        #if current_throttle is not None:
-            #if current_throttle > 90.0:
-                #stream.msg_queue.put({'run': ['f.throttleUp']})
-                #form.warning('Throttle could not be increased higher than 100%')
+    if args['up']:
         stream.msg_queue.put({'run': ['f.throttleUp']})
         form.info('Increasing throttle by 10%')
     elif args['down']:
@@ -704,8 +686,8 @@ telemetry
  -- Bring up the screen for telemetry information.
 text
  -- Shows the most recent text on screen.
-throttle (full | zero | up | down | <percent>)
- -- Set the throttle of the craft
+throttle (up | down | <percent>)
+ -- Set the throttle of the craft to <percent>, or increment by +/-10%
 quit
  -- Shut down Kerminal.
 '''.format(version=__version__)
