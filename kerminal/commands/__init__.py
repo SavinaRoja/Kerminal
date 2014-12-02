@@ -156,7 +156,7 @@ rcs (off | on)
  -- Enable or disable the craft's RCS.
 sas (off | on)
  -- Enable or disable the craft's SAS.
-sa command [<arg>...]
+sa [commands]
  -- Utilize MechJeb SmartAss with various commands; disable with "off" command.
 send <json_string>
  -- Send an arbitrary JSON string to the Telemachus server (if connected).
