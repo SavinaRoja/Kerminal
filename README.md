@@ -27,8 +27,7 @@ In order to use Kerminal, the following are **required**:
 
 `npyscreen2` may be found at: https://github.com/SavinaRoja/npyscreen2
 
-In order to use certain special features of Kerminal/Telemachus, refer to the
-following items:
+In order to utilize the MechJeb SmartASS commands available through Telemachus
+you will need to also have the MechJeb mod installed. Kerminal should alert
+you if MechJeb is not available on your craft.
 
- * Telemachus can integrate with MechJeb to enable many MechJeb tools for flight
-   control, install MechJeb in order to use these.
