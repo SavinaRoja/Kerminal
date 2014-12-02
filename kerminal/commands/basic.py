@@ -55,7 +55,7 @@ To execute Action Group 5, do:
         form.error('Action number must be an integer')
         return
 
-    if 0 <= group_number <= 10:
+    if 0 >= group_number >= 10:
         form.error('Action number must be an integer from 1 to 10')
         return
 
