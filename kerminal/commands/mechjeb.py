@@ -10,15 +10,21 @@ from . import invalid_if_not_connected
 
 
 def mj_callback(form, key, msg):
-    actions = {None: partial(form.critical, 'No Response from MJ!'),
+    actions = {
+               #None: partial(form.critical, 'No Response from MJ!'),
                0: partial(form.info, 'SmartASS action success.'),
                1: partial(form.error, 'SmartASS failed: Game paused.'),
                2: partial(form.error, 'SmartASS failed: Antenna unpowered?'),
                3: partial(form.error, 'SmartASS failed: Antenna inactive.'),
                4: partial(form.error, 'SmartASS failed: Antenna unreachable.'),
-               5: partial(form.error, 'SmartASS failed: No MechJeb part.')}
+               5: partial(form.error, 'SmartASS failed: No MechJeb part.')
+               }
     response_code = msg.pop(key, None)
+    if response_code is None:
+        return False
+
     actions[response_code]()
+    return True
 
 
 @invalid_if_not_connected

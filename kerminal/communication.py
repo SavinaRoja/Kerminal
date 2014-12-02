@@ -175,9 +175,12 @@ class TelemachusProtocol(WebSocketClientProtocol):
 
             global CALLBACKS
             #Callbacks should generally pop their key out of the message
+            remaining = []
             for callback in CALLBACKS:
-                callback(msg)
-            CALLBACKS = []
+                found = callback(msg)
+                if not found:
+                    remaining.append(callback)
+            CALLBACKS = remaining
 
             global LIVE_DATA
             LIVE_DATA.update(msg)
