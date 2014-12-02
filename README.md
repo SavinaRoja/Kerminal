@@ -20,9 +20,9 @@ In order to use Kerminal, the following are **required**:
 
  * Kerbal Space Program must have the Telemachus mod installed in order to
    communicate with external programs (such as Kerminal).
- * You must have a terminal program that works with `curses`; on Windows you
-   will probably need to use cygwin.
  * Python 3.4 or higher
+ * For windows users: as Cygwin does not support Python 3.4, install the curses
+   unofficial binary for your system in order to use Kerminal.
  * The following Python modules: `npyscreen2`, `autobahn`, `docopt`
 
 `npyscreen2` may be found at: https://github.com/SavinaRoja/npyscreen2
