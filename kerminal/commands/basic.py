@@ -531,3 +531,44 @@ Options:
     form.parent_app.set_next_form(None)
     form.parent_app.switch_form_now()
     disconnect(args, widget_proxy, form, stream)
+
+
+@invalid_if_not_connected
+def warp(args, widget_proxy, form, stream):
+    """\
+warp
+
+Set the time warp rate in the game. Normal restrictions apply.
+
+Usage:
+  warp [<rate>]
+
+Arguments:
+  <rate>    An integer value for time warp. Defaults to 0 if not supplied. Rates
+            associated with values outlined below.
+
+Rate Values:
+  0          1X
+  1          5X
+  2         10X
+  3         50X
+  4        100X
+  5      1,000X
+  6     10,000X
+  7    100,000X
+
+Hint:
+  Take advantage of the 0 default value to quickly un-warp time.
+    """
+    if not args['<rate>']:
+        rate = 0
+    else:
+        try:
+            rate = int(args['<rate>'])
+        except ValueError:
+            form.error('Time Warp rate value must be a number!')
+            return
+        if rate > 7 or rate < 0:
+            form.error('Time Warp rate value must be between 0 and 7!')
+
+    stream.msg_queue.put({'run': ['t.timeWarp[{}]'.format(rate)]})

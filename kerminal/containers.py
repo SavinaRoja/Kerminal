@@ -251,8 +251,8 @@ def paused_formatter(func, width):
     except ValueError:
         p = None
 
-    meanings = {0: 'Unpaused', 1: 'Paused', 2: 'No Power', 3: 'Off',
-                4: 'Not Found', None: 'Not Found'}
+    meanings = {0: 'Unpaused', 1: 'Paused', 2: 'No Power', 3: 'Offline',
+                4: 'Unreachable', 5: 'Not Found', None: 'Not Found'}
 
     r_just = '{:>' + str(width) + '}'
     return r_just.format(meanings[p])
@@ -484,7 +484,7 @@ class TimeInfo(KerminalLivePlotable):
                  header='Time',
                  title_length=15,
                  width=36,
-                 height=4,
+                 height=5,
                  *args,
                  **kwargs):
         super(TimeInfo, self).__init__(form,
@@ -500,7 +500,9 @@ class TimeInfo(KerminalLivePlotable):
         #widget_id, title, api-var, formatter_func
         items = [('mission', 'Mission Time:', 'v.missionTime',
                   fancy_time_formatter),
-                 ('paused', 'Paused:', 'p.paused', paused_formatter),
+                 ('universal', 'Universal Time:', 't.universalTime',
+                  fancy_time_formatter),
+                 ('paused', 'Time Rate:', 'p.paused', paused_formatter),
                   ]
 
         def get_data(data, var):

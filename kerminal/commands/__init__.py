@@ -73,6 +73,7 @@ class KerminalCommands(object):
                           'telemetry': basic.telemetry,
                           'throttle': basic.throttle,
                           'quit': basic.quits,
+                          'warp': basic.warp,
                           'exit': basic.quits,  # overlaps with quit
                           }
 
@@ -170,5 +171,7 @@ throttle (up | down | <percent>)
  -- Set the throttle of the craft to <percent>, or increment by +/-10%
 quit
  -- Shut down Kerminal.
+warp [<rate>]
+ -- Set the time warp rate in the game. Normal restrictions apply.
 '''.format(version=__version__)
         form.show_text(msg=help_msg)
