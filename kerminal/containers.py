@@ -161,10 +161,12 @@ def velocity_formatter(func, width):
 
 
 def distance_formatter(func, width):
+    log = logging.getLogger('npyscreen2.test')
     r_just = '{:>' + str(width) + '}'
     a = func()
-    if a == 'None':
+    if a in ['None', '']:
         return r_just.format('N/A')
+    log.debug(a)
     a = float(func())
     units = 'm'
     if a >= 1000.0:
@@ -178,7 +180,7 @@ def distance_formatter(func, width):
     return r_just.format(' '.join([a, units]))
 
 
-def fancy_time_formatter(func, width):
+def fancy_kerbintime_formatter(func, width):
     r_just = '{:>' + str(width) + '}'
     t = func()
     if t == 'None':
@@ -192,6 +194,29 @@ def fancy_time_formatter(func, width):
     #This is weird. The KSP year is pegged to 2556.5 hours rather than a
     #precise number of days. So a year is really 426.08333... (repeating)
     years, days = divmod(days, 426.08333)
+    time_str = '{:.1f}s'.format(seconds)
+    if minutes:
+        time_str = '{:.0f}m '.format(minutes) + time_str
+    if hours:
+        time_str = '{:.0f}h '.format(hours) + time_str
+    if days:
+        time_str = '{:.0f}d '.format(days) + time_str
+    if years:
+        time_str = '{:.0f}y '.format(years) + time_str
+
+    return r_just.format(time_str)
+
+
+def fancy_time_formatter(func, width):
+    r_just = '{:>' + str(width) + '}'
+    t = func()
+    if t == 'None':
+        return r_just.format('N/A')
+    t = float(t)
+    minutes, seconds = divmod(t, 60)
+    hours, minutes = divmod(minutes, 60)
+    days, hours = divmod(hours, 24)
+    years, days = divmod(days, 365)
     time_str = '{:.1f}s'.format(seconds)
     if minutes:
         time_str = '{:.0f}m '.format(minutes) + time_str
@@ -240,7 +265,7 @@ def float_formatter(func, width):
 def plain_formatter(func, width):
     r_just = '{:>' + str(width) + '}'
     p = func()
-    if p == 'None':
+    if p in ['None', '']:
         p = 'N/A'
     return r_just.format(p)
 
@@ -368,7 +393,7 @@ class OrbitalInfo(KerminalLivePlotable):
                  header='Orbital Info',
                  title_length=19,
                  width=42,
-                 height=10,
+                 height=19,
                  *args,
                  **kwargs):
         super(OrbitalInfo, self).__init__(form,
@@ -392,10 +417,28 @@ class OrbitalInfo(KerminalLivePlotable):
                   fancy_time_formatter),
                  ('timetoperiapsis', 'Time to Periapsis:', 'o.timeToPe',
                   fancy_time_formatter),
-                 ('inclination', 'Inclination', 'o.inclination',
+                 ('inclination', 'Inclination:', 'o.inclination',
                   degree_formatter),
-                 ('eccentricity', 'Eccentricity', 'o.eccentricity',
-                  float_formatter)]
+                 ('eccentricity', 'Eccentricity:', 'o.eccentricity',
+                  float_formatter),
+                 ('epoch', 'Epoch:', 'o.epoch', plain_formatter),
+                 ('argofep', 'Arg. of Pe.:', 'o.argumentOfPeriapsis',
+                  plain_formatter),
+                 ('sma', 'Semimajor Axis:', 'o.sma',
+                  plain_formatter),
+                 ('lan', 'Long. of Asc. Node::', 'o.lan',
+                  plain_formatter),
+                 ('maae', 'Mean Anom. @ Epoch:', 'o.maae',
+                  plain_formatter),
+                 ('ppass', 'Time of Pe. Pass.', 'o.timeOfPeriapsisPassage',
+                  plain_formatter),
+                 ('trueanomaly', 'True Anomaly:', 'o.trueAnomaly',
+                  plain_formatter),
+                 ('totrans1', 'Time to Trans. 1:', 'o.timeToTransition1',
+                  plain_formatter),
+                 ('totrans2', 'Time to Trans. 2:', 'o.timeToTransition2',
+                  plain_formatter),
+                 ]
 
         def get_data(data, var):
             return str(data.get(var, ''))
@@ -477,6 +520,91 @@ class SurfaceInfo(KerminalLivePlotable):
                      editable=False)
 
 
+class TargetInfo(KerminalLivePlotable):
+
+    def __init__(self,
+                 form,
+                 parent,
+                 header='Target',
+                 title_length=19,
+                 width=38,
+                 height=23,
+                 *args,
+                 **kwargs):
+        super(TargetInfo, self).__init__(form,
+                                         parent,
+                                         title_length=title_length,
+                                         header=header,
+                                         width=width,
+                                         height=height,
+                                         *args,
+                                         **kwargs)
+
+    def create(self):
+        items = [('name', 'Name:', 'tar.name',
+                  plain_formatter),
+                 ('type', 'Type:', 'tar.type',
+                  plain_formatter),
+                 ('orbitingbody', 'Orbiting Body:', 'tar.o.orbitingBody',
+                  plain_formatter),
+                 ('distance', 'Distance:', 'tar.o.distance',
+                  distance_formatter),
+                 ('velocity', 'Velocity:', 'tar.o.velocity',
+                  velocity_formatter),
+                 ('relvelocity', 'Rel. Velocity:', 'tar.o.relativeVelocity',
+                  velocity_formatter),
+                 ('semimajoraxis', 'Semimajor Axis:', 'tar.o.sma',
+                  plain_formatter),
+                 ('apa', 'Apoapsis:', 'tar.o.ApA',
+                  distance_formatter),
+                 ('pea', 'Periapsis:', 'tar.o.PeA',
+                  distance_formatter),
+                 ('lan', 'Long. of Asc. Node:', 'tar.o.lan',
+                  plain_formatter),
+                 ('maae', 'Mean Anom. @ Epoch:', 'tar.o.maae',
+                  plain_formatter),
+                 ('timetoap', 'Time to Apoapsis:', 'tar.o.timeToAp',
+                  plain_formatter),
+                 ('timetope', 'Time to Periapsis:', 'tar.o.timeToPe',
+                  plain_formatter),
+                 ('inclination', 'Inclination:', 'tar.o.inclination',
+                  degree_formatter),
+                 ('eccentricity', 'Eccentricity:', 'tar.o.eccentricity',
+                  float_formatter),
+                 ('period', 'Orbital Period:', 'tar.o.period',
+                  plain_formatter),
+                 ('argofpe', 'Arg. of Periapsis:', 'tar.o.argumentOfPeriapsis',
+                  plain_formatter),
+                 ('trueanomaly', 'True Anomaly:', 'tar.o.trueAnomaly',
+                  plain_formatter),
+                 ('ppass', 'Time of Pe. Pass.:', 'tar.o.timeOfPeriapsisPassage',
+                  plain_formatter),
+                 ('totrans1', 'Time to Trans. 1:', 'tar.o.timeToTransition1',
+                  plain_formatter),
+                 ('totrans2', 'Time to Trans. 2:', 'tar.o.timeToTransition2',
+                  plain_formatter),
+                 ]
+
+        def get_data(data, var):
+            return str(data.get(var, ''))
+
+        f_width = self.width - (self.title_length + self.left_margin + self.right_margin + 1)
+
+        data = self.form.parent_app.stream.data
+
+        for key, tit, api, frmt_f in items:
+            self.form.parent_app.stream.subscription_manager.add(api)
+            base_func = partial(get_data, data, api)
+            self.add(npyscreen2.TitledField,
+                     widget_id=key,
+                     field_class=SemiInteractiveText,
+                     title_width=self.title_length,
+                     title_value=tit,
+                     field_value='',
+                     field_feed=partial(frmt_f, base_func, f_width),
+                     editable=False)
+
+
 class TimeInfo(KerminalLivePlotable):
     def __init__(self,
                  form,
@@ -488,20 +616,20 @@ class TimeInfo(KerminalLivePlotable):
                  *args,
                  **kwargs):
         super(TimeInfo, self).__init__(form,
-                                          parent,
-                                          title_length=title_length,
-                                          header=header,
-                                          width=width,
-                                          height=height,
-                                          *args,
-                                           **kwargs)
+                                       parent,
+                                       title_length=title_length,
+                                       header=header,
+                                       width=width,
+                                       height=height,
+                                       *args,
+                                       **kwargs)
 
     def create(self):
         #widget_id, title, api-var, formatter_func
         items = [('mission', 'Mission Time:', 'v.missionTime',
                   fancy_time_formatter),
                  ('universal', 'Universal Time:', 't.universalTime',
-                  fancy_time_formatter),
+                  _formatter),
                  ('paused', 'Time Rate:', 'p.paused', paused_formatter),
                   ]
 
@@ -739,39 +867,6 @@ class ThrottleInfo(KerminalLivePlotable):
 
         self.throttle.rely = self.rely + self.top_margin
         self.throttle.relx = self.relx + self.left_margin
-
-        #self.throttle.multi_set()
-        #cur_y = self.rely + self.top_margin
-
-        #for i, widget in enumerate(self.autoables):
-                #widget.rely = cur_y + (i * 2)
-                #widget.relx = self.relx + self.left_margin
-
-    #def update(self):
-        #data = self.form.parent_app.stream.data
-        #sub_manager = self.form.parent_app.stream.subscription_manager
-        #made_modification = False
-        #for gauge in self.gauges:
-            #resource_max = data.get(gauge.api_vars['maximum'])
-            #if resource_max in [None, 'None'] or resource_max < 0:
-                #if gauge.live:  # Already down otherwise
-                    #sub_manager.drop(gauge.api_vars['current'])
-                    #sub_manager.drop(gauge.api_vars['total'])
-                    #gauge.live = False
-                    #gauge.auto_manage = False
-                    #gauge.hidden = True
-                    #made_modification = True
-            #else:
-                #if not gauge.live:  # Already down otherwise
-                    #sub_manager.add(gauge.api_vars['current'])
-                    #sub_manager.add(gauge.api_vars['total'])
-                    #gauge.live = True
-                    #gauge.auto_manage = True
-                    #gauge.hidden = False
-                    #made_modification = True
-        #if made_modification:
-            #self.resize()
-            #self.parent._resize()
 
 
 class SensorInfo(KerminalLivePlotable):

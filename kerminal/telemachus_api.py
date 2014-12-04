@@ -89,8 +89,7 @@ target_plotables = ['tar.o.sma',           # Target Semimajor Axis
                     'tar.o.eccentricity',  # Target Eccentricity
                     'tar.o.period',        # Target Orbital Period
                     'tar.o.relativeVelocity',  # Target Relative Velocity
-                    #Sends improperly encoded text back!
-                    #'tar.o.trueAnomaly',       # Target True Anomaly
+                    'tar.o.trueAnomaly',       # Target True Anomaly
                     'tar.o.orbitingBody',      # Target Orbiting Body
                     'tar.o.argumentOfPeriapsis',     # Target Argument of Periapsis
                     'tar.o.timeToTransition1',       # Target Time to Transition 1

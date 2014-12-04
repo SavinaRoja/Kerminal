@@ -67,6 +67,9 @@ class KerminalForm(npyscreen2.Form):
         self.smart.add(containers.BooleanToggles,
                        widget_id='buttons0')
 
+        self.smart.add(containers.TargetInfo,
+                       widget_id='target0')
+
         self.top_bar = self.add(npyscreen2.BorderBox,
                                 widget_id='top_bar',
                                 auto_manage=False,
