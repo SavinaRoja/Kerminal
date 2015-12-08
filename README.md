@@ -1,6 +1,8 @@
 Kerminal
 ========
 
+[Most Recent Demo Video](https://www.youtube.com/watch?v=Jc7MNo_SCdQ)
+
 Kerminal is a terminal user interface (TUI) for Kerbal Space Progam via the
 Telemachus mod. With it you can view (and log) data regarding your craft's
 status and the environment around it, as well as transmit instructions. Many
